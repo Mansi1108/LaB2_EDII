@@ -1,16 +1,22 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CustomGenerics
 {
-    class TreeNode<T> where T : IComparable
+    internal class TreeNode<T> : IFixedSizeText<T> where T : IComparable, IFixedSizeText<T>
     {
+        #region Variables
         public int Order;
+        public int Id;
+        public int FatherId;
+        public List<int> SubTrees;
         public List<T> NodeValues;
-        public TreeNode<T> Father;
-        public List<TreeNode<T>> SubTrees;
+        public int FixedSizeTextLength => 10 + 10 + (10 * Order) + (Order - 1) * NodeValues[0].FixedSizeTextLength;
+        #endregion
 
+        #region Constructors
         public TreeNode()
         {
 
@@ -18,9 +24,12 @@ namespace CustomGenerics
 
         public TreeNode(T value, int order)
         {
+            Order = order;
+            NodeValues = new List<T>(Order - 1);
+            SubTrees = new List<int>(Order);
             NodeValues.Add(value);
-            this.Order = order;
         }
+        #endregion
 
         public bool NeedsSeparation()
         {
@@ -30,6 +39,16 @@ namespace CustomGenerics
         public void OrderNode()
         {
             NodeValues.Sort();
+        }
+
+        public string ToFixedSize()
+        {
+            return $"{Id:00000000000;-0000000000}{FatherId:00000000000;-0000000000}{string.Join("",SubTrees)}{string.Join("",NodeValues)}";
+        }
+
+        public T GetT(string linea)
+        {
+            throw new NotImplementedException();
         }
     }
 }
