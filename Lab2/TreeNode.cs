@@ -65,7 +65,7 @@ namespace CustomGenerics
             for (int i = 0; i < Order - 1; i++)
             {
                 Value.GetT(linea.Substring(0, TLength));
-                linea.Remove()
+                linea.Remove();
                 NodeValues.Add(Value);
 
             }
