@@ -4,10 +4,10 @@ using System.Text;
 
 namespace CustomGenerics
 {
-    public interface IFixedSizeText<T>
+    public interface IFixedSizeText
     {
         int FixedSizeTextLength { get; }
-        T GetT(string linea);
+        void GetT(string linea);
         string ToFixedSize();
     }
 }

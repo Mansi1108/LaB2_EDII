@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ClassLibrary1
 {
-    public class BTree<T> where T : IComparable, IFixedSizeText<T>
+    public class BTree<T> where T : IComparable, IFixedSizeText
     {
         string FilePath;
         string FileName = "BTree.txt";
@@ -37,7 +37,8 @@ namespace ClassLibrary1
         private async void Insert(T value, int nodeId)
         {
             int bufferLength = 1024;
-            byte[] buffer; 
+            byte[] buffer;
+            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
             if (NodeQty == 0)
             {
                 TreeNode<T> NewNode = new TreeNode<T>(value, TreeOrder);
@@ -50,7 +51,8 @@ namespace ClassLibrary1
                 File.Seek((RootId - 1) * value.FixedSizeTextLength, SeekOrigin.Begin);
                 File.Read(buffer, 0, value.FixedSizeTextLength);
                 var valueString = ByteGenerator.ConvertToString(buffer);
-                value.GetT(valueString);// Esto devuelve un T :<
+                CurrentNode.GetT(valueString);
+                // Esto devuelve un T :<
                 //raiz = new T();
             }
         }

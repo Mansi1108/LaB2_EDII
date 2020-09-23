@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 
 namespace CustomGenerics
 {
-    internal class TreeNode<T> : IFixedSizeText<T> where T : IComparable, IFixedSizeText<T>
+    internal class TreeNode<T> : IFixedSizeText where T : IComparable, IFixedSizeText
     {
         #region Variables
         public int Order;
@@ -17,9 +18,11 @@ namespace CustomGenerics
         #endregion
 
         #region Constructors
-        public TreeNode()
+        public TreeNode(int order)
         {
-
+            Order = order;
+            NodeValues = new List<T>(Order - 1);
+            SubTrees = new List<int>(Order);
         }
 
         public TreeNode(T value, int order)
@@ -33,7 +36,7 @@ namespace CustomGenerics
 
         public bool NeedsSeparation()
         {
-            return NodeValues.Count == Order;//Verify if this function is needed
+            return NodeValues.Count == Order;
         }
 
         public void OrderNode()
@@ -46,9 +49,26 @@ namespace CustomGenerics
             return $"{Id:00000000000;-0000000000}{FatherId:00000000000;-0000000000}{string.Join("",SubTrees)}{string.Join("",NodeValues)}";
         }
 
-        public T GetT(string linea)
+        public void GetT(string linea)
         {
-            throw new NotImplementedException();
+            Id = Convert.ToInt32(linea.Substring(0, 11));
+            linea.Remove(0, 11);
+            FatherId = Convert.ToInt32(linea.Substring(0, 11));
+            linea.Remove(0, 11);
+            for (int i = 0; i < Order; i++)
+            {
+                SubTrees.Add(Convert.ToInt32(linea.Substring(0, 11)));
+                linea.Remove(0, 11);
+            }
+            int TLength = linea.Length / Order - 1;
+            T Value = default;
+            for (int i = 0; i < Order - 1; i++)
+            {
+                Value.GetT(linea.Substring(0, TLength));
+                linea.Remove()
+                NodeValues.Add(Value);
+
+            }
         }
     }
 }
