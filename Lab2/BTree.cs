@@ -74,12 +74,9 @@ namespace ClassLibrary1
         //        {
         //            if (value.CompareTo(node.NodeValues[i]) < 0)
         //            {
-        //                if (i == 0)
-        //                {
         //                    //Insertar en el árbol de hasta la izquierda
         //                    Insert(value, node.SubTrees[i]);
-        //                    i = node.NodeValues.Count;
-        //                }
+        //                    i = node.NodeValues.Count;   
         //            }
         //            else if (value.CompareTo(node.NodeValues[i]) > 0)
         //            {
@@ -98,6 +95,10 @@ namespace ClassLibrary1
         //                        i = node.NodeValues.Count;
         //                    }
         //                }
+        //            }
+        //            else
+        //            {
+        //                i = node.NodeValues.Count;
         //            }
         //        }
         //    }
