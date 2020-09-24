@@ -54,24 +54,34 @@ namespace CustomGenerics
         private string GetSubTreesAndNodeValuesFixedString()
         {
             string FixedString = "";
+            int SubtreesLength = Order;
             for (int i = 0; i < SubTrees.Count; i++)
             {
-                FixedString += $"{SubTrees[i]:00000000000;-0000000000}";
+                if (SubTrees[i] != -1)
+                {
+                    FixedString += $"{SubTrees[i]:00000000000;-0000000000}";
+                    SubtreesLength--;
+                }
             }
 
-            for (int i = 0; i < Order - SubTrees.Count; i++)
+            for (int i = 0; i < Order - SubtreesLength; i++)
             {
                 FixedString += new string(' ', 11);
             }
 
+            int NodevaluesLength = Order - 1;
             for (int i = 0; i < NodeValues.Count; i++)
             {
-                FixedString += NodeValues[i].ToFixedSize();
+                if (NodeValues[i].CompareTo(default) != 0)
+                {
+                    FixedString += NodeValues[i].ToFixedSize();
+                    NodevaluesLength--;
+                }
             }
 
             T value = default;
 
-            for (int i = 0; i < Order - NodeValues.Count - 1; i++)
+            for (int i = 0; i < NodevaluesLength; i++)
             {
                 FixedString += new string(' ', value.FixedSizeTextLength);
             }
