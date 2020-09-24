@@ -97,9 +97,10 @@ namespace CustomGenerics
                 linea.Remove(0, 11);
             }
             int TLength = linea.Length / Order - 1;
-            T Value = default;
+            T Value;
             for (int i = 0; i < Order - 1; i++)
             {
+                Value = default;
                 Value.GetT(linea.Substring(0, TLength));
                 if (Value.CompareTo(default) != 0)
                 {
