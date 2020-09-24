@@ -48,8 +48,8 @@ namespace ClassLibrary1
             else
             {
                 buffer = new byte[bufferLength];
-                File.Seek((nodeId - 1) * CurrentNode.FixedSizeTextLength, SeekOrigin.Begin);//cambiar value por node
-                File.Read(buffer, 0, CurrentNode.FixedSizeTextLength);//cambiar value por node
+                File.Seek((nodeId - 1) * CurrentNode.GetNodeSize(), SeekOrigin.Begin);//cambiar value por node
+                File.Read(buffer, 0, CurrentNode.GetNodeSize());//cambiar value por node
                 var valueString = ByteGenerator.ConvertToString(buffer);
                 CurrentNode.GetT(valueString);
                 if (CurrentNode.SubTrees.Count != 0)

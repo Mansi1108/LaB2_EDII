@@ -45,10 +45,40 @@ namespace CustomGenerics
             NodeValues.Sort();
         }
 
+        #region FixedString
         public string ToFixedSize()
         {
-            return $"{Id:00000000000;-0000000000}{FatherId:00000000000;-0000000000}{string.Join("",SubTrees)}{string.Join("",NodeValues)}";
+            return $"{Id:00000000000;-0000000000}{FatherId:00000000000;-0000000000}{GetSubTreesAndNodeValuesFixedString()}";
         }
+
+        private string GetSubTreesAndNodeValuesFixedString()
+        {
+            string FixedString = "";
+            for (int i = 0; i < SubTrees.Count; i++)
+            {
+                FixedString += $"{SubTrees[i]:00000000000;-0000000000}";
+            }
+
+            for (int i = 0; i < Order - SubTrees.Count; i++)
+            {
+                FixedString += new string(' ', 11);
+            }
+
+            for (int i = 0; i < NodeValues.Count; i++)
+            {
+                FixedString += NodeValues[i].ToFixedSize();
+            }
+
+            T value = default;
+
+            for (int i = 0; i < Order - NodeValues.Count - 1; i++)
+            {
+                FixedString += new string(' ', value.FixedSizeTextLength);
+            }
+
+            return FixedString;
+        }
+        #endregion
 
         public void GetT(string linea)
         {
