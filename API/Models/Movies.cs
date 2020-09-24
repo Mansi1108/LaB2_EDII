@@ -8,14 +8,14 @@ namespace API.Models
 {
     public class Movies : IComparable, IFixedSizeText
     {
-        public string Director { get; set; }
-        public double ImdbRating { get; set; }
-        public string Genre { get; set; }
-        public string ReleaseDate { get; set; }
-        public int RottenTomatoesRating { get; set; }
         public string Title { get; set; }
+        public string ReleaseDate { get; set; }
+        public string Director { get; set; }
+        public string Genre { get; set; }
+        public double ImdbRating { get; set; }
+        public int RottenTomatoesRating { get; set; }
 
-        public int FixedSizeTextLength => throw new NotImplementedException();
+        public int FixedSizeTextLength => 200;
 
         public int CompareTo(object obj)
         {
@@ -36,14 +36,25 @@ namespace API.Models
             }
         }
 
-        public void GetT(string linea)
-        {
-            throw new NotImplementedException();
-        }
-
         public string ToFixedSize()
         {
-            throw new NotImplementedException();
+            return $"{string.Format(Title, "{-100,0}")}{string.Format(ReleaseDate, "{-20,0}")}{string.Format(Director, "{-50,0}")}" +
+                $"{string.Format(Genre, "{-20,0}")}{ImdbRating:000.00}{RottenTomatoesRating:0000}";
+        }
+
+        public void GetT(string linea)
+        {
+            Title = linea.Substring(0, 100).Trim();
+            linea.Remove(0, 100);
+            ReleaseDate = linea.Substring(0, 20).Trim();
+            linea.Remove(0, 20);
+            Director = linea.Substring(0, 50).Trim();
+            linea.Remove(0, 50);
+            Genre = linea.Substring(0, 20).Trim();
+            linea.Remove(0, 20);
+            ImdbRating = double.Parse(linea.Substring(0, 6));
+            linea.Remove(0, 6);
+            RottenTomatoesRating = int.Parse(linea.Trim());
         }
     }
 }
