@@ -38,8 +38,8 @@ namespace API.Models
 
         public string ToFixedSize()
         {
-            return $"{string.Format(Title, "{-100,0}")}{string.Format(ReleaseDate, "{-20,0}")}{string.Format(Director, "{-50,0}")}" +
-                $"{string.Format(Genre, "{-20,0}")}{ImdbRating:000.00}{RottenTomatoesRating:0000}";
+            return $"{string.Format("{0,-100}", Title)}{string.Format("{0,-20}", ReleaseDate)}{string.Format("{0,-50}", Director)}" +
+                $"{string.Format("{0,-20}", Genre)}{ImdbRating:000.00}{RottenTomatoesRating:0000}";
         }
 
         public void GetT(string linea)
