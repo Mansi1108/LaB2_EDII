@@ -48,12 +48,51 @@ namespace ClassLibrary1
             else
             {
                 buffer = new byte[bufferLength];
-                File.Seek((RootId - 1) * value.FixedSizeTextLength, SeekOrigin.Begin);
-                File.Read(buffer, 0, value.FixedSizeTextLength);
+                File.Seek((nodeId - 1) * CurrentNode.FixedSizeTextLength, SeekOrigin.Begin);//cambiar value por node
+                File.Read(buffer, 0, CurrentNode.FixedSizeTextLength);//cambiar value por node
                 var valueString = ByteGenerator.ConvertToString(buffer);
                 CurrentNode.GetT(valueString);
-                // Esto devuelve un T :<
-                //raiz = new T();
+                if (CurrentNode.SubTrees.Count != 0)
+                {
+                    for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
+                    {
+                        if (value.CompareTo(CurrentNode.NodeValues[i]) < 0)
+                        {
+                            if (i == 0)
+                            {
+                                //Insertar en el árbol de hasta la izquierda
+                                Insert(value, CurrentNode.SubTrees[i]);
+                                i = CurrentNode.NodeValues.Count;
+                            }
+                        }
+                        else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)
+                        {
+                            if (i == CurrentNode.NodeValues.Count - 1)
+                            {
+                                //Insertar en el árbol de hasta la derecha
+                                Insert(value, CurrentNode.SubTrees[i + 1]);
+                                i = CurrentNode.NodeValues.Count;
+                            }
+                            else
+                            {
+                                if (value.CompareTo(CurrentNode.NodeValues[i + 1]) < 0)
+                                {
+                                    //Insertar en el i+1
+                                    Insert(value, CurrentNode.SubTrees[i + 1]);
+                                    i = CurrentNode.NodeValues.Count;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (!CurrentNode.NeedsSeparation())//Validación no está en el lugar correcto, tiene que ser luego de insertar el valor.
+                    {
+                        CurrentNode.AddValue(value);
+                    }
+                    //O inserto, o si está lleno, separo.
+                }
             }
         }
 

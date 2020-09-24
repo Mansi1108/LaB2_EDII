@@ -39,8 +39,9 @@ namespace CustomGenerics
             return NodeValues.Count == Order;
         }
 
-        public void OrderNode()
+        public void AddValue(T value)
         {
+            NodeValues.Add(value);
             NodeValues.Sort();
         }
 
@@ -55,9 +56,14 @@ namespace CustomGenerics
             linea.Remove(0, 11);
             FatherId = Convert.ToInt32(linea.Substring(0, 11));
             linea.Remove(0, 11);
+            int Index;
             for (int i = 0; i < Order; i++)
             {
-                SubTrees.Add(Convert.ToInt32(linea.Substring(0, 11)));
+                Index = Convert.ToInt32(linea.Substring(0, 11));
+                if (Index != 0)
+                {
+                    SubTrees.Add(Index);
+                }
                 linea.Remove(0, 11);
             }
             int TLength = linea.Length / Order - 1;
@@ -65,9 +71,26 @@ namespace CustomGenerics
             for (int i = 0; i < Order - 1; i++)
             {
                 Value.GetT(linea.Substring(0, TLength));
-                linea.Remove()
-                NodeValues.Add(Value);
+                if (Value.CompareTo(default) != 0)
+                {
+                    NodeValues.Add(Value);
+                }
+                linea.Remove(0, TLength);
+            }
+        }
 
+        public int GetNodeSize()
+        {
+            if (NodeValues.Count == 0)
+            {
+                NodeValues.Add(default);
+                int Size = FixedSizeTextLength;
+                NodeValues.RemoveRange(0, 1);
+                return Size;
+            }
+            else
+            {
+                return FixedSizeTextLength;
             }
         }
     }
