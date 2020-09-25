@@ -25,6 +25,8 @@ namespace ClassLibrary1
 
         #region SplittingVariables
         T MiddleValue;
+        int FatherId;
+        int LastnodeId;
         List<int> FatherSubtrees;
         List<T> RightValues;
         List<int> RightSubtreesValues;
@@ -229,21 +231,28 @@ namespace ClassLibrary1
                         MiddleValue = CurrentNode.NodeValues[StartIndex];
                         CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.NodeValues.Count - StartIndex);
                         CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.SubTrees.Count - StartIndex);
+                        int NewNodeId = NextNodeId;
+                        FatherId = CurrentNode.FatherId;
+                        if (FatherId == -1)
+                        {
+                            FatherSubtrees.Add(CurrentNode.Id);
+                            FatherSubtrees.Add(NewNodeId);
+                        }
+                        else
+                        {
+                            FatherSubtrees.Add(NewNodeId);
+                            // Guardar el Id del nodo actual e ir a buscarlo al padre y asignar el nuevo subárbol al espacio siguiente.
+                            LastnodeId = CurrentNode.Id;
+                        }
                         // Sobreescribir el nodo actual
                         File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
                         using var writer = new StreamWriter(File, Encoding.ASCII);
                         await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
                         // Crear y escribir el nuevo nodo
-                        int NewNodeId = NextNodeId;
-                        FatherSubtrees.Add(CurrentNode.Id);
-                        FatherSubtrees.Add(NewNodeId);
-                        if (CurrentNode.FatherId == -1)
-                        {
-                            WriteNewRoot();
-                        }
+                        WriteNewNode();
                         // Sobreescribir el padre o manejar la separación del nodo padre
+                        ChangeFather();
                     }
-
                 }
             }
         }
@@ -263,20 +272,31 @@ namespace ClassLibrary1
                 NewNode.SubTrees.Add(subtree);
             }
             // Escribir el nodo
-            File.Seek((NewNode.Id - 1) * NewNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
+            File.Seek((NewNode.Id - 1) * NewNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             using var writer = new StreamWriter(File, Encoding.ASCII);
             await writer.WriteAsync(NewNode.ToFixedSize());
         }
 
-        private async void WriteNewRoot()
+        private async void ChangeFather()
         {
-            TreeNode<T> NewRoot = new TreeNode<T>(MiddleValue, TreeOrder, NextNodeId);
-            NextNodeId++;
-            foreach (var subtree in FatherSubtrees)
+            if (FatherId != -1)
             {
-                NewRoot.SubTrees.Add(subtree);
+                // Insert(MiddleValue, FatherId); Aquí aún falta crear un nuevo método para insertar hacia arriba, porque cambia el orden.
+                // Insertar los hijos, que hacen falta en la posición pertinente (hacia la derecha de la posición anterior -> lastnodeid + 1).
+                // Aquí hay que ir recursivamente hacia abajo para sobreescribir los padres de los nodos.
             }
-            // Sobreescribir la metadata y escribir el nuevo nodo raíz.
+            else
+            {
+                // Sobreescribir la metadata y escribir el nuevo nodo raíz.
+                TreeNode<T> NewRoot = new TreeNode<T>(MiddleValue, TreeOrder, NextNodeId);
+                NextNodeId++;
+                RootId = NewRoot.Id;
+                foreach (var subtree in FatherSubtrees)
+                {
+                    NewRoot.SubTrees.Add(subtree);
+                }
+            }
+
         }
         #endregion
 
