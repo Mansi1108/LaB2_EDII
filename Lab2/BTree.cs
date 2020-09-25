@@ -48,7 +48,7 @@ namespace ClassLibrary1
         #region NodeMoves
         public T LeftMajor(int number)
         {
-            T MajorValue = default ;
+            T MajorValue = default;
             TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
             byte[] buffer = new byte[1024];
             File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
@@ -94,7 +94,7 @@ namespace ClassLibrary1
             }
             return default;
         }
-        
+
         public void TransferValues(int number)
         {
             TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
@@ -150,6 +150,11 @@ namespace ClassLibrary1
             Insert(value, RootId);
         }
 
+        public string GetMetadata()
+        {
+            return $"{RootId:00000000000;-0000000000}{NextNodeId:00000000000;-0000000000}{TreeOrder:00000000000;-0000000000}";
+        }
+
         private async void Insert(T value, int nodeId)
         {
             int bufferLength = 1024;
@@ -160,7 +165,7 @@ namespace ClassLibrary1
                 NextNodeId++;
                 TreeNode<T> NewNode = new TreeNode<T>(value, TreeOrder, RootId);
                 using var writer = new StreamWriter(File, Encoding.ASCII);
-                await writer.WriteAsync($"{RootId},{NextNodeId},{TreeOrder}\r\n{NewNode.ToFixedSize()}");//Falta agregar método para convertir a un string la metadata.
+                await writer.WriteAsync($"{GetMetadata()}\r\n{NewNode.ToFixedSize()}");//Falta agregar método para convertir a un string la metadata.
             }
             else
             {
