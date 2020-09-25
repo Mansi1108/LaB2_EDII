@@ -27,8 +27,17 @@ namespace CustomGenerics
             SubTrees = new List<int>(Order);
         }
 
-        public TreeNode(T value, int order)
+        public TreeNode(int order, int id)
         {
+            Id = id;
+            Order = order;
+            NodeValues = new List<T>(Order - 1);
+            SubTrees = new List<int>(Order);
+        }
+
+        public TreeNode(T value, int order, int id)
+        {
+            Id = id;
             Order = order;
             NodeValues = new List<T>(Order - 1);
             SubTrees = new List<int>(Order);
