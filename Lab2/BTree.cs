@@ -18,7 +18,7 @@ namespace ClassLibrary1
         int TreeOrder;
         int RootId;
         int NextNodeId;
-        int MetadataLength = 18;//Hacer un método para obtener su valor
+        int MetadataLength = 33;//Hacer un método para obtener su valor
         public List<int> ST;
         public List<T> NV;
         #endregion
@@ -296,6 +296,11 @@ namespace ClassLibrary1
                     NewRoot.SubTrees.Add(subtree);
                 }
             }
+
+        }
+
+        private async void InsertInFather(T value, int fatherId)
+        {
 
         }
         #endregion
