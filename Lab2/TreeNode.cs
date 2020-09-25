@@ -45,6 +45,17 @@ namespace CustomGenerics
             NodeValues.Sort();
         }
 
+        public void RemoveValue(T value)
+        {
+            foreach (var item in NodeValues)
+            {
+                if (item.CompareTo(value) == 0)
+                {
+                    NodeValues.Remove(item);
+                }
+            }
+        }
+
         #region FixedString
         public string ToFixedSize()
         {

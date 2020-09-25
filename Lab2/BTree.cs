@@ -2,19 +2,23 @@
 using CustomGenerics.Utilies;
 using System;
 using System.IO;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace ClassLibrary1
 {
     public class BTree<T> where T : IComparable, IFixedSizeText
     {
+        #region Variables
         string FilePath;
         string FileName = "BTree.txt";
         FileStream File;
         int TreeOrder;
         int RootId;
-        int NodeQty;
-        int MetadataLength = 18;
+        int NextNodeId;
+        int MetadataLength = 18;//Hacer un método para obtener su valor
+        #endregion
 
         public BTree(string path, int order)
         {
@@ -25,10 +29,11 @@ namespace ClassLibrary1
             if (File.Length == 0)
             {
                 RootId = 1;
-                NodeQty = 0;
+                NextNodeId = 1;
             }
         }
 
+        #region Insert
         public void AddValue(T value)
         {
             Insert(value, RootId);
@@ -39,16 +44,17 @@ namespace ClassLibrary1
             int bufferLength = 1024;
             byte[] buffer;
             TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
-            if (NodeQty == 0)
+            if (NextNodeId == 0)
             {
+                NextNodeId++;
                 TreeNode<T> NewNode = new TreeNode<T>(value, TreeOrder);
                 using var writer = new StreamWriter(File, Encoding.ASCII);
-                await writer.WriteAsync($"{RootId},{NodeQty},{TreeOrder}\r\n{NewNode.ToFixedSize()}");
+                await writer.WriteAsync($"{RootId},{NextNodeId},{TreeOrder}\r\n{NewNode.ToFixedSize()}");//Falta agregar método para convertir a un string la metadata.
             }
             else
             {
                 buffer = new byte[bufferLength];
-                File.Seek((nodeId - 1) * CurrentNode.GetNodeSize(), SeekOrigin.Begin);
+                File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
                 File.Read(buffer, 0, CurrentNode.GetNodeSize());
                 var valueString = ByteGenerator.ConvertToString(buffer);
                 CurrentNode.GetT(valueString);
@@ -95,11 +101,67 @@ namespace ClassLibrary1
                 }
             }
         }
+        #endregion
 
         private void WriteNewNode(TreeNode<T> node)
         {
             
         }
+
+        #region Delete
+        public void DeleteValue(T value)
+        {
+            Delete(value, RootId);
+        }
+
+        private async void Delete(T value, int nodeId)
+        {
+            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            byte[] buffer = new byte[1024];
+            File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+            if (CurrentNode.SubTrees.Count != 0)
+            {
+                CurrentNode.RemoveValue(value);
+            }
+            else
+            {
+                for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
+                {
+                    if (value.CompareTo(CurrentNode.NodeValues[i]) < 0)
+                    {
+                        if (i == 0)
+                        {
+                            Delete(value, CurrentNode.SubTrees[i]);
+                            i = CurrentNode.NodeValues.Count;
+                        }
+                    }
+                    else if (value.CompareTo(CurrentNode.NodeValues[i]) == 0)
+                    {
+                        //Remover el valor y luego manejar la falta o underflow
+                    }
+                    else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)
+                    {
+                        if (i == CurrentNode.NodeValues.Count - 1)
+                        {
+                            Delete(value, CurrentNode.SubTrees[i + 1]);
+                            i = CurrentNode.NodeValues.Count;
+                        }
+                        else
+                        {
+                            if (value.CompareTo(CurrentNode.NodeValues[i + 1]) < 0)
+                            {
+                                Delete(value, CurrentNode.SubTrees[i + 1]);
+                                i = CurrentNode.NodeValues.Count;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        #endregion
 
         #region PrevInsert
 
@@ -181,9 +243,9 @@ namespace ClassLibrary1
         //            }
         //        }
 
-                
+
         //         Si no existe el padre, lo crea y envía el valor medio. De lo contrario,
-                 
+
         //        if (node.Father == null)
         //        {
         //            node.Father = new TreeNode<T>(node.NodeValues[StartIndex - 1], TreeOrder);
@@ -210,7 +272,7 @@ namespace ClassLibrary1
         //             se hace cargo de eso
         //        }
         //    }
-        }
+        //}
         #endregion
     }
 }
