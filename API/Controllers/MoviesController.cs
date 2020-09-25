@@ -102,11 +102,23 @@ namespace API.Controllers
         }
 
         // DELETE api/<MoviesController>/5
-        [HttpDelete("{id}")]
-        public void DeleteValue(int id)
+        [HttpDelete]
+        [Route("{id}")]
+        public IActionResult DeleteValue(string id)
         {
-            //Aquí no va a recibir un int sino que el atributo nombre-año
-            //manejar todas las funciones como tipo int, así podemos diferencias entre cuál debería ser el resultado.
+            //manejar todas las funciones como tipo bool, así podemos diferencias entre cuál debería ser el resultado.
+            try
+            {
+                if (true)//Aquí debemos ejecutar la función del árbol y dependiendo del resultado ya devolver not found u ok;
+                {
+                    return NotFound();
+                }
+                return Ok();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
     }
 }
