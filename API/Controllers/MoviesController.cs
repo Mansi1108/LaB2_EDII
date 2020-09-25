@@ -76,6 +76,7 @@ namespace API.Controllers
         [HttpDelete]
         public void DeleteTree()
         {
+            //Borrar el archivo donde tenemos el árbol environment/Btree.txt
         }
 
         [HttpPost]
@@ -100,10 +101,12 @@ namespace API.Controllers
             }
         }
 
-            // DELETE api/<MoviesController>/5
-            [HttpDelete("{id}")]
+        // DELETE api/<MoviesController>/5
+        [HttpDelete("{id}")]
         public void DeleteValue(int id)
         {
+            //Aquí no va a recibir un int sino que el atributo nombre-año
+            //manejar todas las funciones como tipo int, así podemos diferencias entre cuál debería ser el resultado.
         }
     }
 }
