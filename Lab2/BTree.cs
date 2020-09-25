@@ -64,12 +64,10 @@ namespace ClassLibrary1
                     {
                         if (value.CompareTo(CurrentNode.NodeValues[i]) < 0)
                         {
-                            if (i == 0)
-                            {
-                                //Insertar en el árbol de hasta la izquierda
-                                Insert(value, CurrentNode.SubTrees[i]);
-                                i = CurrentNode.NodeValues.Count;
-                            }
+                            //Insertar en el árbol de hasta la izquierda
+                            Insert(value, CurrentNode.SubTrees[i]);
+                            i = CurrentNode.NodeValues.Count;
+                            
                         }
                         else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)
                         {
@@ -89,19 +87,121 @@ namespace ClassLibrary1
                                 }
                             }
                         }
+                        else
+                        {
+                            i = CurrentNode.NodeValues.Count;
+                        }
                     }
                 }
                 else
                 {
-                    if (!CurrentNode.NeedsSeparation())//Validación no está en el lugar correcto, tiene que ser luego de insertar el valor.
+                    CurrentNode.AddValue(value);
+                    CurrentNode.NodeValues.Sort(); 
+                    if (CurrentNode.NeedsSeparation()) //O inserto, o si está lleno, separo.
                     {
-                        CurrentNode.AddValue(value);
-                    }
-                    //O inserto, o si está lleno, separo.
+                        int StartIndex;
+                        if (TreeOrder % 2 == 0)
+                        {
+                            StartIndex = TreeOrder / 2;
+                        }
+                        else
+                        {
+                            StartIndex = (TreeOrder / 2) + 1; //5/2 = 2+1 =3
+                        }
+
+                        //Pasar los valores y subárboles correspondientes al nuevo nodo
+                        TreeNode<T> NewNode = new TreeNode<T>(TreeOrder);
+                        for (int i = StartIndex; i < CurrentNode.NodeValues.Count; i++)
+                        {
+                            NewNode.NodeValues.Add(CurrentNode.NodeValues[i]);
+                            NewNode.SubTrees.Add(CurrentNode.SubTrees[i]);
+                            if (i == CurrentNode.NodeValues.Count - 1)
+                            {
+                                NewNode.SubTrees.Add(CurrentNode.SubTrees[i + 1]);
+                                CurrentNode.SubTrees.Remove(i + 1);
+                                CurrentNode.SubTrees[i] = -1;
+                                CurrentNode.NodeValues.Remove(CurrentNode.NodeValues[i]);
+                            }
+                            else
+                            {
+                                CurrentNode.NodeValues[i] = default(T);
+                                CurrentNode.SubTrees[i] = -1;
+                            }
+                        }
+
+                    }    
+                    
                 }
             }
         }
         #endregion
+
+        private void AddToNode(T value, TreeNode<T> node)
+        {
+            node.NodeValues.Add(value);
+            node.NodeValues.Sort();
+            if (node.NeedsSeparation())
+            {
+                int StartIndex;
+                if (TreeOrder % 2 == 0)
+                {
+                    StartIndex = TreeOrder / 2;
+                }
+                else
+                {
+                    StartIndex = (TreeOrder / 2) + 1; //5/2 = 2+1 =3
+                }
+
+                //Pasar los valores y subárboles correspondientes al nuevo nodo
+                TreeNode<T> NewNode = new TreeNode<T>(TreeOrder);
+                for (int i = StartIndex; i < node.NodeValues.Count; i++)
+                {
+                    NewNode.NodeValues.Add(node.NodeValues[i]);
+                    NewNode.SubTrees.Add(node.SubTrees[i]);
+                    if (i == node.NodeValues.Count - 1)
+                    {
+                        NewNode.SubTrees.Add(node.SubTrees[i + 1]);
+                        node.SubTrees.Remove(i + 1);
+                        node.SubTrees[i] = -1;
+                        node.NodeValues.Remove(node.NodeValues[i]);
+                    }
+                    else
+                    {
+                        node.NodeValues[i] = default(T);
+                        node.SubTrees[i] = -1;
+                    }
+                }
+
+
+                //Si no existe el padre, lo crea y envía el valor medio.De lo contrario,
+
+                if (node.Father == null)
+                {
+                    node.Father = new TreeNode<T>(node.NodeValues[StartIndex - 1], TreeOrder);
+                    node.Father.SubTrees.Add(node);
+                    node.Father.SubTrees.Add(NewNode);
+                    Root = node.Father;
+                    NewNode.Father = node.Father;
+                }
+                else
+                {
+                    node.Father.NodeValues.Add(node.NodeValues[StartIndex - 1]);
+                    //Insertar el nuevo nodo al lado del nodo anterior
+                    for (int i = 0; i < node.Father.SubTrees.Count; i++)
+                    {
+                        if (node.Father.SubTrees[i] == node)
+                        {
+                            node.Father.SubTrees.Insert(i + 1, NewNode);
+                        }
+                    }
+                    NewNode.Father = node.Father;
+                    //Aquí debemos verificar recursivamente si el nodo padre necesita separarse
+                    AddToNode(node.NodeValues[StartIndex - 1], node.Father);
+                   // No hay que preocuparse porque quede en la posición correcta porque el .sort()
+                   // se hace cargo de eso
+                }
+            }
+        }
 
         private void WriteNewNode(TreeNode<T> node)
         {
@@ -141,6 +241,9 @@ namespace ClassLibrary1
                     else if (value.CompareTo(CurrentNode.NodeValues[i]) == 0)
                     {
                         //Remover el valor y luego manejar la falta o underflow
+                        CurrentNode.RemoveValue(value);
+                        CurrentNode.SubTrees[i];
+
                     }
                     else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)
                     {
