@@ -175,28 +175,26 @@ namespace ClassLibrary1
 
                 //Si no existe el padre, lo crea y envía el valor medio.De lo contrario,
 
-                if (node.Father == null)
+                if (node.FatherId == -1)
                 {
-                    node.Father = new TreeNode<T>(node.NodeValues[StartIndex - 1], TreeOrder);
-                    node.Father.SubTrees.Add(node);
-                    node.Father.SubTrees.Add(NewNode);
-                    Root = node.Father;
-                    NewNode.Father = node.Father;
+                    //Primero hay que escribir de nuevo el nodo que acabamos de trabajar y
+                    // luego debemos ejecutar la función 
+                    // ArmarNuevoNodo();
                 }
                 else
                 {
-                    node.Father.NodeValues.Add(node.NodeValues[StartIndex - 1]);
+                    node.FatherId.NodeValues.Add(node.NodeValues[StartIndex - 1]);
                     //Insertar el nuevo nodo al lado del nodo anterior
-                    for (int i = 0; i < node.Father.SubTrees.Count; i++)
+                    for (int i = 0; i < node.FatherId.SubTrees.Count; i++)
                     {
-                        if (node.Father.SubTrees[i] == node)
+                        if (node.FatherId.SubTrees[i] == node)
                         {
-                            node.Father.SubTrees.Insert(i + 1, NewNode);
+                            node.FatherId.SubTrees.Insert(i + 1, NewNode);
                         }
                     }
-                    NewNode.Father = node.Father;
+                    NewNode.FatherId = node.FatherId;
                     //Aquí debemos verificar recursivamente si el nodo padre necesita separarse
-                    AddToNode(node.NodeValues[StartIndex - 1], node.Father);
+                    AddToNode(node.NodeValues[StartIndex - 1], node.FatherId);
                    // No hay que preocuparse porque quede en la posición correcta porque el .sort()
                    // se hace cargo de eso
                 }
