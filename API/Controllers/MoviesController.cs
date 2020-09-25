@@ -44,11 +44,12 @@ namespace API.Controllers
             switch (traversal)
             {
                 case "preorden":
-                    return Storage.Instance.MoviesTree.GetPathing(0);
+                    //return Storage.Instance.MoviesTree.GetPathing(0);
                 case "inorden":
-                    return Storage.Instance.MoviesTree.GetPathing(1);
+                    //return Storage.Instance.MoviesTree.GetPathing(1);
                 case "postorden":
-                    return Storage.Instance.MoviesTree.GetPathing(2);
+                    //return Storage.Instance.MoviesTree.GetPathing(2);
+                    return new List<Movies>();
             }
             return new List<Movies>();
         }
