@@ -1,6 +1,7 @@
 ﻿using CustomGenerics;
 using CustomGenerics.Utilies;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -18,6 +19,8 @@ namespace ClassLibrary1
         int RootId;
         int NextNodeId;
         int MetadataLength = 18;//Hacer un método para obtener su valor
+        public List<int> ST;
+        public List<T> NV;
         #endregion
 
         public BTree(string path, int order)
@@ -32,6 +35,105 @@ namespace ClassLibrary1
                 NextNodeId = 1;
             }
         }
+
+        #region NodeMoves
+        public T LeftMajor(int number)
+        {
+            T MajorValue = default ;
+            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            byte[] buffer = new byte[1024];
+            File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+            if (!(CurrentNode.UnderFlow()))
+            {
+                for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
+                {
+                    if (CurrentNode.NodeValues[i].CompareTo(MajorValue) > 0)
+                    {
+                        MajorValue = CurrentNode.NodeValues[i];
+                    }
+                }
+                return MajorValue;
+            }
+            return default;
+        }
+
+        public T LowerRight(int number)
+        {
+            T LowerValue = default;
+            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            byte[] buffer = new byte[1024];
+            File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+            if (!(CurrentNode.UnderFlow()))
+            {
+                for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
+                {
+                    if (CurrentNode.NodeValues[i].CompareTo(default) != 0)
+                    {
+                        if (CurrentNode.NodeValues[i].CompareTo(LowerValue) < 0)
+                        {
+                            LowerValue = CurrentNode.NodeValues[i];
+                        }
+                    }
+                }
+                return LowerValue;
+            }
+            return default;
+        }
+        
+        public void TransferValues(int number)
+        {
+            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            byte[] buffer = new byte[1024];
+            File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+
+            for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
+            {
+                if (CurrentNode.NodeValues[i].CompareTo(default) != 0)
+                {
+                    NV.Add(CurrentNode.NodeValues[i]);
+                }
+            }
+            for (int j = 0; j < CurrentNode.SubTrees.Count; j++)
+            {
+                if (CurrentNode.SubTrees[j] != -1)
+                {
+                    ST.Add(CurrentNode.SubTrees[j]);
+                }
+            }
+            CurrentNode.DeathNode(); // :D (mire la referencia si aun no lo ha hecho)
+
+        }
+
+        public void ReceiveValues(int number)
+        {
+            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            byte[] buffer = new byte[1024];
+            File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+
+            foreach (var item in NV)
+            {
+                CurrentNode.NodeValues.Add(item);
+            }
+            foreach (var item in ST)
+            {
+                CurrentNode.SubTrees.Add(item);
+            }
+            NV.Clear();
+            ST.Clear();
+        }
+        #endregion
 
         #region Insert
         public void AddValue(T value)
@@ -240,7 +342,18 @@ namespace ClassLibrary1
                     {
                         //Remover el valor y luego manejar la falta o underflow
                         CurrentNode.RemoveValue(value);
-                        CurrentNode.SubTrees[i];
+                        T Replacement = LeftMajor(CurrentNode.SubTrees[i]);
+                        if (Replacement.CompareTo(default) == 0)
+                        {
+                            Replacement = LowerRight(CurrentNode.SubTrees[i + 1]);
+
+                            if (Replacement.CompareTo(default) == 0)
+                            {
+                                TransferValues(CurrentNode.SubTrees[i] + 1);
+                                ReceiveValues(CurrentNode.SubTrees[i]);
+                                CurrentNode.SubTrees[i + 1] = -1;
+                            }
+                        }
 
                     }
                     else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)

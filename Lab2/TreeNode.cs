@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using System.IO;
+using CustomGenerics.Utilies;
 
 namespace CustomGenerics
 {
@@ -145,5 +147,24 @@ namespace CustomGenerics
                 return FixedSizeTextLength;
             }
         }
+        public bool UnderFlow()
+        {
+            if (NodeValues.Count - 1 < (Order / 2) - 1)
+            {
+                return true;
+            }
+            else
+            {
+            return false;
+            }
+        }
+
+        public void DeathNode() //Referencia del nombre del método: https://www.youtube.com/watch?v=ATUAmQ1QEKk
+        {
+            NodeValues.Clear();
+            SubTrees.Clear();
+            FatherId = -1;
+        }
+
     }
 }
