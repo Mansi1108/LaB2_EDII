@@ -16,7 +16,7 @@ namespace CustomGenerics
         public int FatherId;
         public List<int> SubTrees;
         public List<T> NodeValues;
-        public int FixedSizeTextLength => 10 + 10 + (10 * Order) + (Order - 1) * NodeValues[0].FixedSizeTextLength;
+        public int FixedSizeTextLength => 10 + 10 + (10 * Order) + (Order - 1) * NodeValues[0].FixedSizeTextLength + 2;
         #endregion
 
         #region Constructors
@@ -70,7 +70,7 @@ namespace CustomGenerics
         #region FixedString
         public string ToFixedSize()
         {
-            return $"{Id:00000000000;-0000000000}{FatherId:00000000000;-0000000000}{GetSubTreesAndNodeValuesFixedString()}";
+            return $"{Id:00000000000;-0000000000}{FatherId:00000000000;-0000000000}{GetSubTreesAndNodeValuesFixedString()}\r\n";
         }
 
         private string GetSubTreesAndNodeValuesFixedString()

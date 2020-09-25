@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Security;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
@@ -53,20 +54,20 @@ namespace ClassLibrary1
 
         public string GetMetadata()
         {
-            return $"{RootId:00000000000;-0000000000}{NextNodeId:00000000000;-0000000000}{TreeOrder:00000000000;-0000000000}";
+            return $"{RootId:00000000000;-0000000000}{NextNodeId:00000000000;-0000000000}{TreeOrder:00000000000;-0000000000}\r\n";
         }
 
         private async void Insert(T value, int nodeId)
         {
             int bufferLength = 1024;
             byte[] buffer;
-            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
             if (NextNodeId == 1)
             {
                 NextNodeId++;
                 TreeNode<T> NewNode = new TreeNode<T>(value, TreeOrder, RootId);
                 using var writer = new StreamWriter(File, Encoding.ASCII);
-                await writer.WriteAsync($"{GetMetadata()}\r\n{NewNode.ToFixedSize()}");//Falta agregar método para convertir a un string la metadata.
+                await writer.WriteAsync($"{GetMetadata()}{NewNode.ToFixedSize()}");//Falta agregar método para convertir a un string la metadata.
             }
             else
             {
@@ -116,48 +117,13 @@ namespace ClassLibrary1
                     CurrentNode.NodeValues.Sort(); 
                     if (CurrentNode.NeedsSeparation()) //O inserto, o si está lleno, separo.
                     {
-                        int StartIndex;
-                        if (TreeOrder % 2 == 0)
-                        {
-                            StartIndex = (TreeOrder / 2) -1;
-                        }
-                        else
-                        {
-                            StartIndex = TreeOrder / 2; 
-                        }
-
-                        //Pasar los valores y subárboles correspondientes al nuevo nodo
-                        TreeNode<T> NewNode = new TreeNode<T>(TreeOrder);
-                        for (int i = StartIndex + 1; i < CurrentNode.NodeValues.Count; i++)
-                        {
-                            RightValues.Add(CurrentNode.NodeValues[i]);
-                            RightSubtreesValues.Add(CurrentNode.SubTrees[i]);
-                        }
-                        RightSubtreesValues.Add(CurrentNode.SubTrees[CurrentNode.SubTrees.Count - 1]);
-                        MiddleValue = CurrentNode.NodeValues[StartIndex];
-                        CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.NodeValues.Count - StartIndex);
-                        CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.SubTrees.Count - StartIndex);
-                        int NewNodeId = NextNodeId;
-                        FatherId = CurrentNode.FatherId;
-                        if (FatherId == -1)
-                        {
-                            FatherSubtrees.Add(CurrentNode.Id);
-                            FatherSubtrees.Add(NewNodeId);
-                        }
-                        else
-                        {
-                            FatherSubtrees.Add(NewNodeId);
-                            // Guardar el Id del nodo actual e ir a buscarlo al padre y asignar el nuevo subárbol al espacio siguiente.
-                            LastnodeId = CurrentNode.Id;
-                        }
-                        // Sobreescribir el nodo actual
+                        StartSplit(CurrentNode);
+                    }
+                    else
+                    {
                         File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
                         using var writer = new StreamWriter(File, Encoding.ASCII);
                         await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
-                        // Crear y escribir el nuevo nodo
-                        WriteNewNode();
-                        // Sobreescribir el padre o manejar la separación del nodo padre
-                        ChangeFather();
                     }
                 }
             }
@@ -165,6 +131,52 @@ namespace ClassLibrary1
         #endregion
 
         #region Splitting
+        private async void StartSplit(TreeNode<T> CurrentNode)
+        {
+            int StartIndex;
+            if (TreeOrder % 2 == 0)
+            {
+                StartIndex = (TreeOrder / 2) - 1;
+            }
+            else
+            {
+                StartIndex = TreeOrder / 2;
+            }
+
+            //Pasar los valores y subárboles correspondientes al nuevo nodo
+            TreeNode<T> NewNode = new TreeNode<T>(TreeOrder);
+            for (int i = StartIndex + 1; i < CurrentNode.NodeValues.Count; i++)
+            {
+                RightValues.Add(CurrentNode.NodeValues[i]);
+                RightSubtreesValues.Add(CurrentNode.SubTrees[i]);
+            }
+            RightSubtreesValues.Add(CurrentNode.SubTrees[CurrentNode.SubTrees.Count - 1]);
+            MiddleValue = CurrentNode.NodeValues[StartIndex];
+            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.NodeValues.Count - StartIndex);
+            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.SubTrees.Count - StartIndex);
+            int NewNodeId = NextNodeId;
+            FatherId = CurrentNode.FatherId;
+            if (FatherId == -1)
+            {
+                FatherSubtrees.Add(CurrentNode.Id);
+                FatherSubtrees.Add(NewNodeId);
+            }
+            else
+            {
+                FatherSubtrees.Add(NewNodeId);
+                // Guardar el Id del nodo actual e ir a buscarlo al padre y asignar el nuevo subárbol al espacio siguiente.
+                LastnodeId = CurrentNode.Id;
+            }
+            // Sobreescribir el nodo actual
+            File.Seek((CurrentNode.Id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
+            using var writer = new StreamWriter(File, Encoding.ASCII);
+            await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
+            // Crear y escribir el nuevo nodo
+            WriteNewNode();
+            // Sobreescribir el padre o manejar la separación del nodo padre
+            ChangeFather();
+        }
+
         private async void WriteNewNode()
         {
             TreeNode<T> NewNode = new TreeNode<T>(TreeOrder, NextNodeId);
@@ -187,9 +199,7 @@ namespace ClassLibrary1
         {
             if (FatherId != -1)
             {
-                // Insert(MiddleValue, FatherId); Aquí aún falta crear un nuevo método para insertar hacia arriba, porque cambia el orden.
-                // Insertar los hijos, que hacen falta en la posición pertinente (hacia la derecha de la posición anterior -> lastnodeid + 1).
-                // Aquí hay que ir recursivamente hacia abajo para sobreescribir los padres de los nodos.
+                InsertInFather(MiddleValue, FatherId);
             }
             else
             {
@@ -201,13 +211,48 @@ namespace ClassLibrary1
                 {
                     NewRoot.SubTrees.Add(subtree);
                 }
+                File.Seek(0, SeekOrigin.Begin);
+                using var writer = new StreamWriter(File, Encoding.ASCII);
+                await writer.WriteAsync(GetMetadata());
+                File.Seek((NewRoot.Id - 1) * NewRoot.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+                await writer.WriteAsync(NewRoot.ToFixedSize());
             }
 
         }
 
         private async void InsertInFather(T value, int fatherId)
         {
-
+            byte[] buffer = new byte[1024];
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+            File.Seek((fatherId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+            CurrentNode.AddValue(value);
+            for (int i = 0; i < CurrentNode.SubTrees.Count; i++)
+            {
+                if (CurrentNode.SubTrees[i] == LastnodeId)
+                {
+                    if (i + 1 != CurrentNode.SubTrees.Count)
+                    {
+                        CurrentNode.SubTrees.Insert(i + 1, RightSubtreesValues[0]);
+                    }
+                    else
+                    {
+                        CurrentNode.SubTrees.Add(RightSubtreesValues[0]);
+                    }
+                }
+            }
+            if (CurrentNode.NeedsSeparation())
+            {
+                StartSplit(CurrentNode);
+            }
+            else
+            {
+                File.Seek((CurrentNode.Id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+                using var writer = new StreamWriter(File, Encoding.ASCII);
+                await writer.WriteAsync(CurrentNode.ToFixedSize());
+            }
         }
         #endregion
 
