@@ -10,7 +10,7 @@ using System.Text;
 
 namespace ClassLibrary1
 {
-    public class BTree<T> where T : IComparable, IFixedSizeText
+    public class BTree<T> where T : IComparable, IFixedSizeText, new()
     {
         #region TreeVariables
         string FilePath;
@@ -19,7 +19,7 @@ namespace ClassLibrary1
         int TreeOrder;
         int RootId;
         int NextNodeId;
-        int MetadataLength = 33;//Hacer un método para obtener su valor
+        int MetadataLength = 37;//Hacer un método para obtener su valor
         public List<int> ST;
         public List<T> NV;
         #endregion
@@ -42,7 +42,20 @@ namespace ClassLibrary1
             if (File.Length == 0)
             {
                 RootId = 1;
-                NextNodeId = 1;
+                NextNodeId = 2;
+            }
+            else
+            {
+                byte[] buffer = new byte[1024];
+                File.Seek(0, SeekOrigin.Begin);
+                File.Read(buffer, 0, MetadataLength);
+                var valueString = ByteGenerator.ConvertToString(buffer);
+                RootId = Convert.ToInt32(valueString.Substring(0, 11));
+                valueString = valueString.Remove(0, 12);
+                NextNodeId = Convert.ToInt32(valueString.Substring(0, 11));
+                valueString = valueString.Remove(0, 12);
+                TreeOrder = Convert.ToInt32(valueString.Substring(0, 11));
+                File.Close();
             }
         }
 
@@ -54,25 +67,28 @@ namespace ClassLibrary1
 
         public string GetMetadata()
         {
-            return $"{RootId:00000000000;-0000000000}{NextNodeId:00000000000;-0000000000}{TreeOrder:00000000000;-0000000000}\r\n";
+            return $"{RootId:00000000000;-0000000000}|{NextNodeId:00000000000;-0000000000}|{TreeOrder:00000000000;-0000000000}\r\n";
         }
 
         private async void Insert(T value, int nodeId)
         {
             int bufferLength = 1024;
             byte[] buffer;
-            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
             if (NextNodeId == 1)
             {
-                NextNodeId++;
                 TreeNode<T> NewNode = new TreeNode<T>(value, TreeOrder, RootId);
+                NextNodeId++;
                 using var writer = new StreamWriter(File, Encoding.ASCII);
                 await writer.WriteAsync($"{GetMetadata()}{NewNode.ToFixedSize()}");//Falta agregar método para convertir a un string la metadata.
+                writer.Close();
             }
             else
             {
+                TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+                T tvalue = new T();
                 buffer = new byte[bufferLength];
-                File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+                File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+                File.Seek((nodeId - 1) * tvalue.FixedSizeTextLength + MetadataLength, SeekOrigin.Begin);
                 File.Read(buffer, 0, CurrentNode.GetNodeSize());
                 var valueString = ByteGenerator.ConvertToString(buffer);
                 CurrentNode.GetT(valueString);
@@ -114,7 +130,6 @@ namespace ClassLibrary1
                 else
                 {
                     CurrentNode.AddValue(value);
-                    CurrentNode.NodeValues.Sort(); 
                     if (CurrentNode.NeedsSeparation()) //O inserto, o si está lleno, separo.
                     {
                         StartSplit(CurrentNode);

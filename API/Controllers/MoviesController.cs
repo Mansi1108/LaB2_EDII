@@ -41,15 +41,15 @@ namespace API.Controllers
         [Route("{traversal}")]
         public List<Movies> GetMovies(string traversal)
         {
-            switch (traversal)
-            {
-                case "preorden":
-                    return Storage.Instance.MoviesTree.GetPathing(0);
-                case "inorden":
-                    return Storage.Instance.MoviesTree.GetPathing(1);
-                case "postorden":
-                    return Storage.Instance.MoviesTree.GetPathing(2);
-            }
+            //switch (traversal)
+            //{
+            //    case "preorden":
+            //        return Storage.Instance.MoviesTree.GetPathing(0);
+            //    case "inorden":
+            //        return Storage.Instance.MoviesTree.GetPathing(1);
+            //    case "postorden":
+            //        return Storage.Instance.MoviesTree.GetPathing(2);
+            //}
             return new List<Movies>();
         }
 
@@ -63,6 +63,7 @@ namespace API.Controllers
                 file.CopyToAsync(content); 
                 var text = Encoding.ASCII.GetString(content.ToArray());
                 var order = JsonSerializer.Deserialize<int>(text);
+                Movies movie = new Movies();
                 Storage.Instance.MoviesTree = new BTree<Movies>(Environment.ContentRootPath , order);
                 return Ok();
             }

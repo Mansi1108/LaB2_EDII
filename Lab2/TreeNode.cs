@@ -8,7 +8,7 @@ using CustomGenerics.Utilies;
 
 namespace CustomGenerics
 {
-    internal class TreeNode<T> : IFixedSizeText where T : IComparable, IFixedSizeText
+    internal class TreeNode<T> : IFixedSizeText where T : IComparable, IFixedSizeText, new()
     {
         #region Variables
         public int Order;
@@ -16,12 +16,13 @@ namespace CustomGenerics
         public int FatherId;
         public List<int> SubTrees;
         public List<T> NodeValues;
-        public int FixedSizeTextLength => 10 + 10 + (10 * Order) + (Order - 1) * NodeValues[0].FixedSizeTextLength + 2;
+        public int FixedSizeTextLength => 12 + 12 + (12 * Order) + (Order - 1) * (NodeValues[0].FixedSizeTextLength + 1) + 2;
         #endregion
 
         #region Constructors
         public TreeNode(int order)
         {
+            FatherId = -1;
             Order = order;
             NodeValues = new List<T>(Order - 1);
             SubTrees = new List<int>(Order);
@@ -29,6 +30,7 @@ namespace CustomGenerics
 
         public TreeNode(int order, int id)
         {
+            FatherId = -1;
             Id = id;
             Order = order;
             NodeValues = new List<T>(Order - 1);
@@ -37,6 +39,7 @@ namespace CustomGenerics
 
         public TreeNode(T value, int order, int id)
         {
+            FatherId = -1;
             Id = id;
             Order = order;
             NodeValues = new List<T>(Order - 1);
@@ -70,7 +73,7 @@ namespace CustomGenerics
         #region FixedString
         public string ToFixedSize()
         {
-            return $"{Id:00000000000;-0000000000}{FatherId:00000000000;-0000000000}{GetSubTreesAndNodeValuesFixedString()}\r\n";
+            return $"{Id:00000000000;-0000000000}|{FatherId:00000000000;-0000000000}|{GetSubTreesAndNodeValuesFixedString()}\r\n";
         }
 
         private string GetSubTreesAndNodeValuesFixedString()
@@ -81,31 +84,59 @@ namespace CustomGenerics
             {
                 if (SubTrees[i] != -1)
                 {
-                    FixedString += $"{SubTrees[i]:00000000000;-0000000000}";
-                    SubtreesLength--;
+                    if (i + 1 < SubTrees.Count)
+                    {
+                        FixedString += $"{SubTrees[i]:00000000000;-0000000000},";
+                        SubtreesLength--;
+                    }
+                    else
+                    {
+                        FixedString += $"{SubTrees[i]:00000000000;-0000000000}";
+                        SubtreesLength--;
+                    }
                 }
             }
 
-            for (int i = 0; i < Order - SubtreesLength; i++)
+            for (int i = 0; i < SubtreesLength; i++)
             {
-                FixedString += new string(' ', 11);
+                if (i + 1 < SubtreesLength)
+                {
+                    FixedString += new string(' ', 11)+",";
+                }
+                else
+                {
+                    FixedString += new string(' ', 11);
+                }
             }
 
-            int NodevaluesLength = Order - 1;
+            FixedString += "|";
+
+            int NodeValuesLength = Order - 1;
             for (int i = 0; i < NodeValues.Count; i++)
             {
-                if (NodeValues[i].CompareTo(default) != 0)
+                if (i + 1 < NodeValuesLength)
+                {
+                    FixedString += NodeValues[i].ToFixedSize() + "|";
+                    NodeValuesLength--;
+                }
+                else
                 {
                     FixedString += NodeValues[i].ToFixedSize();
-                    NodevaluesLength--;
+                    NodeValuesLength--;
                 }
             }
 
-            T value = default;
-
-            for (int i = 0; i < NodevaluesLength; i++)
+            int Tlength = NodeValues[0].FixedSizeTextLength;
+            for (int i = 0; i < NodeValuesLength; i++)
             {
-                FixedString += new string(' ', value.FixedSizeTextLength);
+                if (i + 1 < NodeValuesLength)
+                {
+                    FixedString += new string(' ', Tlength) + "|";
+                }
+                else
+                {
+                    FixedString += new string(' ', Tlength);
+                }
             }
 
             return FixedString;
@@ -115,41 +146,41 @@ namespace CustomGenerics
         public void GetT(string linea)
         {
             Id = Convert.ToInt32(linea.Substring(0, 11));
-            linea.Remove(0, 11);
+            linea = linea.Remove(0, 12);
             FatherId = Convert.ToInt32(linea.Substring(0, 11));
-            linea.Remove(0, 11);
+            linea = linea.Remove(0, 12);
             int Index;
             for (int i = 0; i < Order; i++)
             {
-                Index = Convert.ToInt32(linea.Substring(0, 11));
-                if (Index != 0)
+                if (linea.Substring(0,11).Trim() != "")
                 {
-                    SubTrees.Add(Index);
+                    Index = Convert.ToInt32(linea.Substring(0, 11));
+                    if (Index != 0)
+                    {
+                        SubTrees.Add(Index);
+                    }
                 }
-                linea.Remove(0, 11);
+                linea = linea.Remove(0, 12);
             }
-            int TLength = linea.Length / Order - 1;
-            T Value;
+            T Value = new T();
             for (int i = 0; i < Order - 1; i++)
             {
-                Value = default;
-                Value.GetT(linea.Substring(0, TLength));
-                if (Value.CompareTo(default) != 0)
+                if (linea.Substring(0,Value.FixedSizeTextLength).Trim() != "")
                 {
+                    var stringT = linea.Substring(0, Value.FixedSizeTextLength);
+                    Value.GetT(stringT);
                     NodeValues.Add(Value);
+                    linea = linea.Remove(0, Value.FixedSizeTextLength + 1);
                 }
-                linea.Remove(0, TLength);
             }
         }
 
         public int GetNodeSize()
         {
+            T value = new T();
             if (NodeValues.Count == 0)
             {
-                NodeValues.Add(default);
-                int Size = FixedSizeTextLength;
-                NodeValues.RemoveRange(0, 1);
-                return Size;
+                return 12 + 12 + (12 * Order) + (Order - 1) * (value.FixedSizeTextLength) + 2;
             }
             else
             {
