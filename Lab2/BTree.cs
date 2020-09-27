@@ -55,8 +55,8 @@ namespace ClassLibrary1
                 NextNodeId = Convert.ToInt32(valueString.Substring(0, 11));
                 valueString = valueString.Remove(0, 12);
                 TreeOrder = Convert.ToInt32(valueString.Substring(0, 11));
-                File.Close();
             }
+            File.Close();
         }
 
         #region Insert
@@ -74,8 +74,9 @@ namespace ClassLibrary1
         {
             int bufferLength = 1024;
             byte[] buffer;
-            if (NextNodeId == 1)
+            if (NextNodeId == 2)
             {
+                File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                 TreeNode<T> NewNode = new TreeNode<T>(value, TreeOrder, RootId);
                 NextNodeId++;
                 using var writer = new StreamWriter(File, Encoding.ASCII);
@@ -141,6 +142,7 @@ namespace ClassLibrary1
                         await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
                     }
                 }
+                File.Close();
             }
         }
         #endregion

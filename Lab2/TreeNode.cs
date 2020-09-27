@@ -27,6 +27,9 @@ namespace CustomGenerics
             NodeValues = new List<T>(Order - 1);
             SubTrees = new List<int>(Order);
         }
+        public TreeNode()
+        {
+        }
 
         public TreeNode(int order, int id)
         {
@@ -101,7 +104,7 @@ namespace CustomGenerics
             {
                 if (i + 1 < SubtreesLength)
                 {
-                    FixedString += new string(' ', 11)+",";
+                    FixedString += new string(' ', 11) + ",";
                 }
                 else
                 {
@@ -152,7 +155,7 @@ namespace CustomGenerics
             int Index;
             for (int i = 0; i < Order; i++)
             {
-                if (linea.Substring(0,11).Trim() != "")
+                if (linea.Substring(0, 11).Trim() != "")
                 {
                     Index = Convert.ToInt32(linea.Substring(0, 11));
                     if (Index != 0)
@@ -163,9 +166,9 @@ namespace CustomGenerics
                 linea = linea.Remove(0, 12);
             }
             T Value = new T();
-            for (int i = 0; i < Order - 1; i++)
+            for (int i = 0; i < Order - 1; i++)//4
             {
-                if (linea.Substring(0,Value.FixedSizeTextLength).Trim() != "")
+                if (linea.Substring(0, Value.FixedSizeTextLength).Trim() != "")
                 {
                     var stringT = linea.Substring(0, Value.FixedSizeTextLength);
                     Value.GetT(stringT);
