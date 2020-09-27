@@ -28,9 +28,9 @@ namespace ClassLibrary1
         T MiddleValue;
         int FatherId;
         int LastnodeId;
-        List<int> FatherSubtrees;
-        List<T> RightValues;
-        List<int> RightSubtreesValues;
+        List<int> FatherSubtrees = new List<int>();
+        List<T> RightValues = new List<T>();
+        List<int> RightSubtreesValues = new List<int>();
         #endregion
 
         public BTree(string path, int order)
@@ -92,7 +92,7 @@ namespace ClassLibrary1
                 File.Read(buffer, 0, CurrentNode.GetNodeSize());
                 var valueString = ByteGenerator.ConvertToString(buffer);
                 CurrentNode.GetT(valueString);
-                if (CurrentNode.SubTrees.Count != 0)
+                if (!CurrentNode.AllSubtreesNull())
                 {
                     for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
                     {
@@ -168,9 +168,10 @@ namespace ClassLibrary1
             }
             RightSubtreesValues.Add(CurrentNode.SubTrees[CurrentNode.SubTrees.Count - 1]);
             MiddleValue = CurrentNode.NodeValues[StartIndex];
-            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.NodeValues.Count - StartIndex);
-            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.SubTrees.Count - StartIndex);
+            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.NodeValues.Count - (StartIndex + 1));
+            CurrentNode.SubTrees.RemoveRange(StartIndex + 1, CurrentNode.SubTrees.Count - (StartIndex + 1));
             int NewNodeId = NextNodeId;
+            NextNodeId++;
             FatherId = CurrentNode.FatherId;
             if (FatherId == -1)
             {

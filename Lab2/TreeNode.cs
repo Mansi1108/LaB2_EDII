@@ -46,10 +46,31 @@ namespace CustomGenerics
             Id = id;
             Order = order;
             NodeValues = new List<T>(Order - 1);
-            SubTrees = new List<int>(Order);
+            FillWithNull();
             NodeValues.Add(value);
         }
         #endregion
+
+        private void FillWithNull()
+        {
+            SubTrees = new List<int>(Order);
+            for (int i = 0; i < Order; i++)
+            {
+                SubTrees.Add(-1);
+            }
+        }
+
+        public bool AllSubtreesNull()
+        {
+            foreach (var item in SubTrees)
+            {
+                if (item != -1)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         public bool NeedsSeparation()
         {
@@ -82,33 +103,29 @@ namespace CustomGenerics
         private string GetSubTreesAndNodeValuesFixedString()
         {
             string FixedString = "";
-            int SubtreesLength = Order;
-            for (int i = 0; i < SubTrees.Count; i++)
+            for (int i = 0; i < Order; i++)
             {
                 if (SubTrees[i] != -1)
                 {
                     if (i + 1 < SubTrees.Count)
                     {
                         FixedString += $"{SubTrees[i]:00000000000;-0000000000},";
-                        SubtreesLength--;
                     }
                     else
                     {
                         FixedString += $"{SubTrees[i]:00000000000;-0000000000}";
-                        SubtreesLength--;
                     }
-                }
-            }
-
-            for (int i = 0; i < SubtreesLength; i++)
-            {
-                if (i + 1 < SubtreesLength)
-                {
-                    FixedString += new string(' ', 11) + ",";
                 }
                 else
                 {
-                    FixedString += new string(' ', 11);
+                    if (i + 1 < SubTrees.Count)
+                    {
+                        FixedString += new string(' ', 11) + ",";
+                    }
+                    else
+                    {
+                        FixedString += new string(' ', 11);
+                    }
                 }
             }
 
@@ -162,6 +179,10 @@ namespace CustomGenerics
                         SubTrees.Add(Index);
                     }
                 }
+                else
+                {
+                    SubTrees.Add(-1);
+                }
                 linea = linea.Remove(0, 12);
             }
             T Value = new T();
@@ -190,6 +211,7 @@ namespace CustomGenerics
                 return FixedSizeTextLength;
             }
         }
+
         public bool UnderFlow()
         {
             if (NodeValues.Count - 1 < (Order / 2) - 1)
