@@ -11,11 +11,11 @@ namespace IntegerTree
         static void Main(string[] args)
         {
             Begginnig:
-            Console.WriteLine("Por favor ingrese el grado del árbol multicamino");
+            Console.WriteLine("Por favor ingrese el grado del árbol");
             try
             {
                 int order = Convert.ToInt32(Console.ReadLine());
-                BTree<ModifiedInts> BTree = new BTree<ModifiedInts>(@"C:\Users\misch\Desktop", order);
+                BTree<ModifiedInts> BTree = new BTree<ModifiedInts>(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), order);
                 Console.WriteLine($"{Environment.NewLine}Se ha creado un árbol de grado {order}");
                 bool HasMoreValues = true;
                 do
