@@ -2,6 +2,7 @@
 using ClassLibrary1;
 using Microsoft.AspNetCore.Hosting;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace IntegerTree
@@ -21,16 +22,19 @@ namespace IntegerTree
                 do
                 {
                 Insert:
-                    Console.WriteLine($"{Environment.NewLine}Por favor ingrese un valor para insertar en el árbol");
+                    Console.WriteLine($"{Environment.NewLine}Por favor ingrese los valores a insertar en el árbol, separados por comas.");
                     try
                     {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        BTree.AddValue(new ModifiedInts(Convert.ToInt32(Console.ReadLine())));
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.WriteLine("Si desea insertar otro valor, presione 'Y'. De lo contrario, presione cualquier otra tecla. ");
-                        if (Console.ReadKey().Key != ConsoleKey.Y)
+                        var line = Console.ReadLine().Split(',');
+                        var intList = new List<ModifiedInts>();
+                        foreach (var value in line)
                         {
-                            HasMoreValues = false;
+                            intList.Add(new ModifiedInts(Convert.ToInt32(value)));
+                        }
+                        foreach (var item in intList)
+                        {
+                            BTree.AddValue(item);
+                            intList.RemoveAt(0);
                         }
                     }
                     catch
