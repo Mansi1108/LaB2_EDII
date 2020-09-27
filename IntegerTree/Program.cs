@@ -34,7 +34,6 @@ namespace IntegerTree
                         foreach (var item in intList)
                         {
                             BTree.AddValue(item);
-                            intList.RemoveAt(0);
                         }
                     }
                     catch

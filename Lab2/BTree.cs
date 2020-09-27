@@ -86,10 +86,9 @@ namespace ClassLibrary1
             else
             {
                 TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
-                T tvalue = new T();
                 buffer = new byte[bufferLength];
                 File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
-                File.Seek((nodeId - 1) * tvalue.FixedSizeTextLength + MetadataLength, SeekOrigin.Begin);
+                File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
                 File.Read(buffer, 0, CurrentNode.GetNodeSize());
                 var valueString = ByteGenerator.ConvertToString(buffer);
                 CurrentNode.GetT(valueString);
