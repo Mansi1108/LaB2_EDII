@@ -105,7 +105,7 @@ namespace CustomGenerics
             string FixedString = "";
             for (int i = 0; i < Order; i++)
             {
-                if (SubTrees[i] != -1)
+                if (i < SubTrees.Count)
                 {
                     if (i + 1 < SubTrees.Count)
                     {

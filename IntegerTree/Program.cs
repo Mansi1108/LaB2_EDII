@@ -25,8 +25,8 @@ namespace IntegerTree
                     Console.WriteLine($"{Environment.NewLine}Por favor ingrese los valores a insertar en el árbol, separados por comas.");
                     try
                     {
-                        var line = Console.ReadLine().Split(',');
                         var intList = new List<ModifiedInts>();
+                        var line = Console.ReadLine().Split(',');
                         foreach (var value in line)
                         {
                             intList.Add(new ModifiedInts(Convert.ToInt32(value)));

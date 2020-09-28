@@ -90,6 +90,7 @@ namespace ClassLibrary1
                 File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                 File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
                 File.Read(buffer, 0, CurrentNode.GetNodeSize());
+                File.Close();
                 var valueString = ByteGenerator.ConvertToString(buffer);
                 CurrentNode.GetT(valueString);
                 if (!CurrentNode.AllSubtreesNull())
@@ -132,16 +133,18 @@ namespace ClassLibrary1
                     CurrentNode.AddValue(value);
                     if (CurrentNode.NeedsSeparation()) //O inserto, o si está lleno, separo.
                     {
+
                         StartSplit(CurrentNode);
                     }
                     else
                     {
+                        File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                         File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
                         using var writer = new StreamWriter(File, Encoding.ASCII);
                         await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
+                        writer.Close();
                     }
                 }
-                File.Close();
             }
         }
         #endregion
@@ -149,6 +152,7 @@ namespace ClassLibrary1
         #region Splitting
         private async void StartSplit(TreeNode<T> CurrentNode)
         {
+            
             int StartIndex;
             if (TreeOrder % 2 == 0)
             {
@@ -185,6 +189,7 @@ namespace ClassLibrary1
                 LastnodeId = CurrentNode.Id;
             }
             // Sobreescribir el nodo actual
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             File.Seek((CurrentNode.Id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
             using var writer = new StreamWriter(File, Encoding.ASCII);
             await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
@@ -192,6 +197,7 @@ namespace ClassLibrary1
             WriteNewNode();
             // Sobreescribir el padre o manejar la separación del nodo padre
             ChangeFather();
+            
         }
 
         private async void WriteNewNode()
@@ -220,6 +226,7 @@ namespace ClassLibrary1
             }
             else
             {
+
                 // Sobreescribir la metadata y escribir el nuevo nodo raíz.
                 TreeNode<T> NewRoot = new TreeNode<T>(MiddleValue, TreeOrder, NextNodeId);
                 NextNodeId++;
@@ -228,17 +235,20 @@ namespace ClassLibrary1
                 {
                     NewRoot.SubTrees.Add(subtree);
                 }
+                File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                 File.Seek(0, SeekOrigin.Begin);
                 using var writer = new StreamWriter(File, Encoding.ASCII);
                 await writer.WriteAsync(GetMetadata());
                 File.Seek((NewRoot.Id - 1) * NewRoot.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
                 await writer.WriteAsync(NewRoot.ToFixedSize());
+                writer.Close();
             }
 
         }
 
         private async void InsertInFather(T value, int fatherId)
         {
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             byte[] buffer = new byte[1024];
             TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
             File.Seek((fatherId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
@@ -270,6 +280,7 @@ namespace ClassLibrary1
                 using var writer = new StreamWriter(File, Encoding.ASCII);
                 await writer.WriteAsync(CurrentNode.ToFixedSize());
             }
+            File.Close();
         }
         #endregion
 
