@@ -72,6 +72,14 @@ namespace CustomGenerics
             return true;
         }
 
+        public void SetSubtreesNull(int StartIndex)
+        {
+            for (int i = StartIndex; i < SubTrees.Count; i++)
+            {
+                SubTrees[i] = -1;
+            }
+        }
+
         public bool NeedsSeparation()
         {
             return NodeValues.Count == Order;
@@ -107,7 +115,7 @@ namespace CustomGenerics
             {
                 if (i < SubTrees.Count)
                 {
-                    if (i + 1 < SubTrees.Count)
+                    if (i + 1 < Order)
                     {
                         FixedString += $"{SubTrees[i]:00000000000;-0000000000},";
                     }
@@ -118,13 +126,13 @@ namespace CustomGenerics
                 }
                 else
                 {
-                    if (i + 1 < SubTrees.Count)
+                    if (i + 1 < Order)
                     {
-                        FixedString += new string(' ', 11) + ",";
+                        FixedString += $"{-1:00000000000;-0000000000},";
                     }
                     else
                     {
-                        FixedString += new string(' ', 11);
+                        FixedString += $"{-1:00000000000;-0000000000}";
                     }
                 }
             }
@@ -157,7 +165,7 @@ namespace CustomGenerics
                     FixedString += new string(' ', Tlength);
                 }
             }
-
+            
             return FixedString;
         }
         #endregion
