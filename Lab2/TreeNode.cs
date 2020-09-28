@@ -72,6 +72,14 @@ namespace CustomGenerics
             return true;
         }
 
+        public void SetSubtreesNull(int StartIndex)
+        {
+            for (int i = StartIndex; i < SubTrees.Count; i++)
+            {
+                SubTrees[i] = -1;
+            }
+        }
+
         public bool NeedsSeparation()
         {
             return NodeValues.Count == Order;
@@ -81,6 +89,18 @@ namespace CustomGenerics
         {
             NodeValues.Add(value);
             NodeValues.Sort();
+        }
+
+        public void AddSubTree(int subtree)
+        {
+            for (int i = 0; i < SubTrees.Count; i++)
+            {
+                if (SubTrees[i] == -1)
+                {
+                    SubTrees[i] = subtree;
+                    i = SubTrees.Count;
+                }
+            }
         }
 
         public bool RemoveValue(T value)
@@ -109,7 +129,7 @@ namespace CustomGenerics
             {
                 if (i < SubTrees.Count)
                 {
-                    if (i + 1 < SubTrees.Count)
+                    if (i + 1 < Order)
                     {
                         FixedString += $"{SubTrees[i]:00000000000;-0000000000},";
                     }
@@ -120,13 +140,13 @@ namespace CustomGenerics
                 }
                 else
                 {
-                    if (i + 1 < SubTrees.Count)
+                    if (i + 1 < Order)
                     {
-                        FixedString += new string(' ', 11) + ",";
+                        FixedString += $"{-1:00000000000;-0000000000},";
                     }
                     else
                     {
-                        FixedString += new string(' ', 11);
+                        FixedString += $"{-1:00000000000;-0000000000}";
                     }
                 }
             }
@@ -222,7 +242,7 @@ namespace CustomGenerics
             }
             else
             {
-            return false;
+                return false;
             }
         }
 

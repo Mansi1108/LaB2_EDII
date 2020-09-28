@@ -42,7 +42,7 @@ namespace ClassLibrary1
             if (File.Length == 0)
             {
                 RootId = 1;
-                NextNodeId = 2;
+                NextNodeId = 1;
             }
             else
             {
@@ -74,11 +74,11 @@ namespace ClassLibrary1
         {
             int bufferLength = 1024;
             byte[] buffer;
-            if (NextNodeId == 2)
+            if (NextNodeId == 1)
             {
                 File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
-                TreeNode<T> NewNode = new TreeNode<T>(value, TreeOrder, RootId);
                 NextNodeId++;
+                TreeNode<T> NewNode = new TreeNode<T>(value, TreeOrder, RootId);
                 using var writer = new StreamWriter(File, Encoding.ASCII);
                 await writer.WriteAsync($"{GetMetadata()}{NewNode.ToFixedSize()}");//Falta agregar método para convertir a un string la metadata.
                 writer.Close();
@@ -102,7 +102,7 @@ namespace ClassLibrary1
                             //Insertar en el árbol de hasta la izquierda
                             Insert(value, CurrentNode.SubTrees[i]);
                             i = CurrentNode.NodeValues.Count;
-                            
+
                         }
                         else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)
                         {
@@ -152,7 +152,7 @@ namespace ClassLibrary1
         #region Splitting
         private async void StartSplit(TreeNode<T> CurrentNode)
         {
-            
+
             int StartIndex;
             if (TreeOrder % 2 == 0)
             {
@@ -164,7 +164,6 @@ namespace ClassLibrary1
             }
 
             //Pasar los valores y subárboles correspondientes al nuevo nodo
-            TreeNode<T> NewNode = new TreeNode<T>(TreeOrder);
             for (int i = StartIndex + 1; i < CurrentNode.NodeValues.Count; i++)
             {
                 RightValues.Add(CurrentNode.NodeValues[i]);
@@ -172,19 +171,17 @@ namespace ClassLibrary1
             }
             RightSubtreesValues.Add(CurrentNode.SubTrees[CurrentNode.SubTrees.Count - 1]);
             MiddleValue = CurrentNode.NodeValues[StartIndex];
-            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.NodeValues.Count - (StartIndex + 1));
-            CurrentNode.SubTrees.RemoveRange(StartIndex + 1, CurrentNode.SubTrees.Count - (StartIndex + 1));
-            int NewNodeId = NextNodeId;
-            NextNodeId++;
+            CurrentNode.NodeValues.RemoveRange(StartIndex, CurrentNode.NodeValues.Count - StartIndex);
+            CurrentNode.SetSubtreesNull(StartIndex + 1);
             FatherId = CurrentNode.FatherId;
             if (FatherId == -1)
             {
                 FatherSubtrees.Add(CurrentNode.Id);
-                FatherSubtrees.Add(NewNodeId);
+                FatherSubtrees.Add(NextNodeId);
             }
             else
             {
-                FatherSubtrees.Add(NewNodeId);
+                FatherSubtrees.Add(NextNodeId);
                 // Guardar el Id del nodo actual e ir a buscarlo al padre y asignar el nuevo subárbol al espacio siguiente.
                 LastnodeId = CurrentNode.Id;
             }
@@ -193,11 +190,11 @@ namespace ClassLibrary1
             File.Seek((CurrentNode.Id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
             using var writer = new StreamWriter(File, Encoding.ASCII);
             await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
+            writer.Close();
             // Crear y escribir el nuevo nodo
             WriteNewNode();
             // Sobreescribir el padre o manejar la separación del nodo padre
             ChangeFather();
-            
         }
 
         private async void WriteNewNode()
@@ -213,12 +210,14 @@ namespace ClassLibrary1
                 NewNode.SubTrees.Add(subtree);
             }
             // Escribir el nodo
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             File.Seek((NewNode.Id - 1) * NewNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             using var writer = new StreamWriter(File, Encoding.ASCII);
             await writer.WriteAsync(NewNode.ToFixedSize());
+            writer.Close();
         }
 
-        private async void ChangeFather()
+        private void ChangeFather()
         {
             if (FatherId != -1)
             {
@@ -226,24 +225,25 @@ namespace ClassLibrary1
             }
             else
             {
-
                 // Sobreescribir la metadata y escribir el nuevo nodo raíz.
                 TreeNode<T> NewRoot = new TreeNode<T>(MiddleValue, TreeOrder, NextNodeId);
                 NextNodeId++;
                 RootId = NewRoot.Id;
                 foreach (var subtree in FatherSubtrees)
                 {
-                    NewRoot.SubTrees.Add(subtree);
+                    NewRoot.AddSubTree(subtree);
                 }
                 File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                 File.Seek(0, SeekOrigin.Begin);
                 using var writer = new StreamWriter(File, Encoding.ASCII);
-                await writer.WriteAsync(GetMetadata());
-                File.Seek((NewRoot.Id - 1) * NewRoot.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
-                await writer.WriteAsync(NewRoot.ToFixedSize());
+                writer.Write(GetMetadata());
                 writer.Close();
+                File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+                File.Seek((NewRoot.Id - 1) * NewRoot.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+                using var writer2 = new StreamWriter(File, Encoding.ASCII);
+                writer2.Write(NewRoot.ToFixedSize());
+                writer2.Close();
             }
-
         }
 
         private async void InsertInFather(T value, int fatherId)
@@ -292,15 +292,13 @@ namespace ClassLibrary1
 
         private bool Delete(T value, int nodeId)
         {
+            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
             byte[] buffer = new byte[1024];
-            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
-            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
-            File.Close();
             var valueString = ByteGenerator.ConvertToString(buffer);
             CurrentNode.GetT(valueString);
-            if (!CurrentNode.AllSubtreesNull())
+            if (CurrentNode.SubTrees.Count != 0)
             {
                 for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
                 {
@@ -358,7 +356,7 @@ namespace ClassLibrary1
         public T LeftMajor(int number)
         {
             T MajorValue = new T();
-            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
             byte[] buffer = new byte[1024];
             File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
