@@ -8,6 +8,7 @@ namespace API.Models
 {
     public class Movies : IComparable, IFixedSizeText
     {
+        public string ID { get; set; }
         public string Title { get; set; }
         public string ReleaseDate { get; set; }
         public string Director { get; set; }
@@ -19,21 +20,7 @@ namespace API.Models
 
         public int CompareTo(object obj)
         {
-            if (Title.CompareTo(((Movies)obj).Title) == 0)
-            {
-                if (ReleaseDate.CompareTo(((Movies)obj).ReleaseDate) == 0)
-                {
-                    return Director.CompareTo(((Movies)obj).Director);
-                }
-                else
-                {
-                    return ReleaseDate.CompareTo(((Movies)obj).ReleaseDate);
-                }
-            }
-            else
-            {
-                return Title.CompareTo(((Movies)obj).Title);
-            }
+            return ID.CompareTo(((Movies)obj).ID);
         }
 
         public string ToFixedSize()
@@ -55,6 +42,12 @@ namespace API.Models
             ImdbRating = double.Parse(linea.Substring(0, 6));
             linea.Remove(0, 6);
             RottenTomatoesRating = int.Parse(linea.Trim());
+            SetID();
+        }
+
+        public void SetID()
+        {
+            ID = $"{Title}-{ReleaseDate.Substring(ReleaseDate.Length-4,4)}";
         }
     }
 }

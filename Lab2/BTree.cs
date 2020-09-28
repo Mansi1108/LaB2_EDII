@@ -13,10 +13,10 @@ namespace ClassLibrary1
     public class BTree<T> where T : IComparable, IFixedSizeText
     {
         #region TreeVariables
+        public int TreeOrder;
         string FilePath;
         string FileName = "BTree.txt";
         FileStream File;
-        int TreeOrder;
         int RootId;
         int NextNodeId;
         int MetadataLength = 33;//Hacer un método para obtener su valor
@@ -124,6 +124,7 @@ namespace ClassLibrary1
                         File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
                         using var writer = new StreamWriter(File, Encoding.ASCII);
                         await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
+                        writer.Close();
                     }
                 }
             }
