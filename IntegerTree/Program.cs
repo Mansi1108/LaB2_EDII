@@ -66,7 +66,17 @@ namespace IntegerTree
                                 Console.WriteLine($"{Environment.NewLine}Por favor ingrese el valor que desea eliminar");
                                 try
                                 {
-                                    if(BTree.DeleteValue(new ModifiedInts(int.Parse(Console.ReadLine()))))
+                                    var intList = new List<ModifiedInts>();
+                                    var line = Console.ReadLine().Split(',');
+                                    foreach (var value in line)
+                                    {
+                                        intList.Add(new ModifiedInts(Convert.ToInt32(value)));
+                                    }
+                                    foreach (var item in intList)
+                                    {
+                                        BTree.DeleteValue(item);
+                                    }
+                                    if (BTree.DeleteValue(new ModifiedInts(int.Parse(Console.ReadLine()))))
                                     {
                                         Console.WriteLine($"{Environment.NewLine}El valor fue eliminado");
                                     }

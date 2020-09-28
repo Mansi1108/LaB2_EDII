@@ -348,13 +348,15 @@ namespace ClassLibrary1
 
         private bool Delete(T value, int nodeId)
         {
-            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
             byte[] buffer = new byte[1024];
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
             var valueString = ByteGenerator.ConvertToString(buffer);
+            File.Close();
             CurrentNode.GetT(valueString);
-            if (CurrentNode.SubTrees.Count != 0)
+            if (!CurrentNode.AllSubtreesNull())
             {
                 for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
                 {
@@ -388,7 +390,14 @@ namespace ClassLibrary1
                     {
                         if (i == CurrentNode.NodeValues.Count - 1)
                         {
-                            return Delete(value, CurrentNode.SubTrees[i + 1]);
+                            if (value.CompareTo(CurrentNode.NodeValues[i]) < 0)
+                            {
+                                return Delete(value, CurrentNode.SubTrees[i]);
+                            }
+                            else
+                            {
+                                return Delete(value, CurrentNode.SubTrees[i + 1]);
+                            }
                         }
                         else
                         {
@@ -403,7 +412,13 @@ namespace ClassLibrary1
             }
             else
             {
-                return CurrentNode.RemoveValue(value);
+                var answer = CurrentNode.RemoveValue(value);
+                File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+                File.Seek((CurrentNode.Id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+                using var writer = new StreamWriter(File, Encoding.ASCII);
+                writer.Write(CurrentNode.ToFixedSize());
+                writer.Close();
+                return answer;
             }
         }
         #endregion
