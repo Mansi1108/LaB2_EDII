@@ -177,11 +177,11 @@ namespace ClassLibrary1
             if (FatherId == -1)
             {
                 FatherSubtrees.Add(CurrentNode.Id);
-                FatherSubtrees.Add(NextNodeId + 1);
+                FatherSubtrees.Add(NextNodeId);
             }
             else
             {
-                FatherSubtrees.Add(NextNodeId + 1);
+                FatherSubtrees.Add(NextNodeId);
                 // Guardar el Id del nodo actual e ir a buscarlo al padre y asignar el nuevo subárbol al espacio siguiente.
                 LastnodeId = CurrentNode.Id;
             }
@@ -231,7 +231,7 @@ namespace ClassLibrary1
                 RootId = NewRoot.Id;
                 foreach (var subtree in FatherSubtrees)
                 {
-                    NewRoot.SubTrees.Add(subtree);
+                    NewRoot.AddSubTree(subtree);
                 }
                 File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                 File.Seek(0, SeekOrigin.Begin);

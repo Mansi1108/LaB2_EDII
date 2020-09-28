@@ -5,6 +5,7 @@ using System.Data;
 using System.Text;
 using System.IO;
 using CustomGenerics.Utilies;
+using System.Runtime.InteropServices;
 
 namespace CustomGenerics
 {
@@ -89,6 +90,18 @@ namespace CustomGenerics
         {
             NodeValues.Add(value);
             NodeValues.Sort();
+        }
+
+        public void AddSubTree(int subtree)
+        {
+            for (int i = 0; i < SubTrees.Count; i++)
+            {
+                if (SubTrees[i] == -1)
+                {
+                    SubTrees[i] = subtree;
+                    i = SubTrees.Count;
+                }
+            }
         }
 
         public void RemoveValue(T value)
