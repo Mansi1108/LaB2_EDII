@@ -13,10 +13,10 @@ namespace ClassLibrary1
     public class BTree<T> where T : IComparable, IFixedSizeText, new()
     {
         #region TreeVariables
+        public int TreeOrder;
         string FilePath;
         string FileName = "BTree.txt";
         FileStream File;
-        int TreeOrder;
         int RootId;
         int NextNodeId;
         int MetadataLength = 37;//Hacer un método para obtener su valor
@@ -28,9 +28,9 @@ namespace ClassLibrary1
         T MiddleValue;
         int FatherId;
         int LastnodeId;
-        List<int> FatherSubtrees;
-        List<T> RightValues;
-        List<int> RightSubtreesValues;
+        List<int> FatherSubtrees = new List<int>();
+        List<T> RightValues = new List<T>();
+        List<int> RightSubtreesValues = new List<int>();
         #endregion
 
         public BTree(string path, int order)
@@ -86,14 +86,14 @@ namespace ClassLibrary1
             else
             {
                 TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
-                T tvalue = new T();
                 buffer = new byte[bufferLength];
                 File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
-                File.Seek((nodeId - 1) * tvalue.FixedSizeTextLength + MetadataLength, SeekOrigin.Begin);
+                File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
                 File.Read(buffer, 0, CurrentNode.GetNodeSize());
+                File.Close();
                 var valueString = ByteGenerator.ConvertToString(buffer);
                 CurrentNode.GetT(valueString);
-                if (CurrentNode.SubTrees.Count != 0)
+                if (!CurrentNode.AllSubtreesNull())
                 {
                     for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
                     {
@@ -133,16 +133,18 @@ namespace ClassLibrary1
                     CurrentNode.AddValue(value);
                     if (CurrentNode.NeedsSeparation()) //O inserto, o si está lleno, separo.
                     {
+
                         StartSplit(CurrentNode);
                     }
                     else
                     {
+                        File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                         File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
                         using var writer = new StreamWriter(File, Encoding.ASCII);
                         await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
+                        writer.Close();
                     }
                 }
-                File.Close();
             }
         }
         #endregion
@@ -150,6 +152,7 @@ namespace ClassLibrary1
         #region Splitting
         private async void StartSplit(TreeNode<T> CurrentNode)
         {
+            
             int StartIndex;
             if (TreeOrder % 2 == 0)
             {
@@ -169,9 +172,10 @@ namespace ClassLibrary1
             }
             RightSubtreesValues.Add(CurrentNode.SubTrees[CurrentNode.SubTrees.Count - 1]);
             MiddleValue = CurrentNode.NodeValues[StartIndex];
-            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.NodeValues.Count - StartIndex);
-            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.SubTrees.Count - StartIndex);
+            CurrentNode.NodeValues.RemoveRange(StartIndex + 1, CurrentNode.NodeValues.Count - (StartIndex + 1));
+            CurrentNode.SubTrees.RemoveRange(StartIndex + 1, CurrentNode.SubTrees.Count - (StartIndex + 1));
             int NewNodeId = NextNodeId;
+            NextNodeId++;
             FatherId = CurrentNode.FatherId;
             if (FatherId == -1)
             {
@@ -185,6 +189,7 @@ namespace ClassLibrary1
                 LastnodeId = CurrentNode.Id;
             }
             // Sobreescribir el nodo actual
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             File.Seek((CurrentNode.Id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
             using var writer = new StreamWriter(File, Encoding.ASCII);
             await writer.WriteAsync(CurrentNode.ToFixedSize());//Falta el destructor del nodo para que no quede en memoria.
@@ -192,6 +197,7 @@ namespace ClassLibrary1
             WriteNewNode();
             // Sobreescribir el padre o manejar la separación del nodo padre
             ChangeFather();
+            
         }
 
         private async void WriteNewNode()
@@ -220,6 +226,7 @@ namespace ClassLibrary1
             }
             else
             {
+
                 // Sobreescribir la metadata y escribir el nuevo nodo raíz.
                 TreeNode<T> NewRoot = new TreeNode<T>(MiddleValue, TreeOrder, NextNodeId);
                 NextNodeId++;
@@ -228,17 +235,20 @@ namespace ClassLibrary1
                 {
                     NewRoot.SubTrees.Add(subtree);
                 }
+                File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                 File.Seek(0, SeekOrigin.Begin);
                 using var writer = new StreamWriter(File, Encoding.ASCII);
                 await writer.WriteAsync(GetMetadata());
                 File.Seek((NewRoot.Id - 1) * NewRoot.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
                 await writer.WriteAsync(NewRoot.ToFixedSize());
+                writer.Close();
             }
 
         }
 
         private async void InsertInFather(T value, int fatherId)
         {
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             byte[] buffer = new byte[1024];
             TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
             File.Seek((fatherId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
@@ -270,28 +280,27 @@ namespace ClassLibrary1
                 using var writer = new StreamWriter(File, Encoding.ASCII);
                 await writer.WriteAsync(CurrentNode.ToFixedSize());
             }
+            File.Close();
         }
         #endregion
 
         #region Delete
-        public void DeleteValue(T value)
+        public bool DeleteValue(T value)
         {
-            Delete(value, RootId);
+            return Delete(value, RootId);
         }
 
-        private async void Delete(T value, int nodeId)
+        private bool Delete(T value, int nodeId)
         {
-            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
             byte[] buffer = new byte[1024];
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            File.Close();
             var valueString = ByteGenerator.ConvertToString(buffer);
             CurrentNode.GetT(valueString);
-            if (CurrentNode.SubTrees.Count != 0)
-            {
-                CurrentNode.RemoveValue(value);
-            }
-            else
+            if (!CurrentNode.AllSubtreesNull())
             {
                 for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
                 {
@@ -299,8 +308,7 @@ namespace ClassLibrary1
                     {
                         if (i == 0)
                         {
-                            Delete(value, CurrentNode.SubTrees[i]);
-                            i = CurrentNode.NodeValues.Count;
+                            return Delete(value, CurrentNode.SubTrees[i]);
                         }
                     }
                     else if (value.CompareTo(CurrentNode.NodeValues[i]) == 0)
@@ -308,36 +316,40 @@ namespace ClassLibrary1
                         //Remover el valor y luego manejar la falta o underflow
                         CurrentNode.RemoveValue(value);
                         T Replacement = LeftMajor(CurrentNode.SubTrees[i]);
-                        if (Replacement.CompareTo(default) == 0)
+                        if (Replacement.CompareTo(new T()) == 0)
                         {
                             Replacement = LowerRight(CurrentNode.SubTrees[i + 1]);
 
-                            if (Replacement.CompareTo(default) == 0)
+                            if (Replacement.CompareTo(new T()) == 0)
                             {
                                 TransferValues(CurrentNode.SubTrees[i] + 1);
                                 ReceiveValues(CurrentNode.SubTrees[i]);
                                 CurrentNode.SubTrees[i + 1] = -1;
                             }
                         }
+                        return true;
 
                     }
                     else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)
                     {
                         if (i == CurrentNode.NodeValues.Count - 1)
                         {
-                            Delete(value, CurrentNode.SubTrees[i + 1]);
-                            i = CurrentNode.NodeValues.Count;
+                            return Delete(value, CurrentNode.SubTrees[i + 1]);
                         }
                         else
                         {
                             if (value.CompareTo(CurrentNode.NodeValues[i + 1]) < 0)
                             {
-                                Delete(value, CurrentNode.SubTrees[i + 1]);
-                                i = CurrentNode.NodeValues.Count;
+                                return Delete(value, CurrentNode.SubTrees[i + 1]);
                             }
                         }
                     }
                 }
+                return false;
+            }
+            else
+            {
+                return CurrentNode.RemoveValue(value);
             }
         }
         #endregion
@@ -345,13 +357,14 @@ namespace ClassLibrary1
         #region NodeMoves
         public T LeftMajor(int number)
         {
-            T MajorValue = default;
-            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            T MajorValue = new T();
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
             byte[] buffer = new byte[1024];
             File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
             var valueString = ByteGenerator.ConvertToString(buffer);
             CurrentNode.GetT(valueString);
+            MajorValue = CurrentNode.NodeValues[0];
             if (!(CurrentNode.UnderFlow()))
             {
                 for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
@@ -361,20 +374,22 @@ namespace ClassLibrary1
                         MajorValue = CurrentNode.NodeValues[i];
                     }
                 }
+                CurrentNode.RemoveValue(MajorValue);
                 return MajorValue;
             }
-            return default;
+            return new T();
         }
 
         public T LowerRight(int number)
         {
-            T LowerValue = default;
+            T LowerValue = new T();
             TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
             byte[] buffer = new byte[1024];
             File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
             var valueString = ByteGenerator.ConvertToString(buffer);
             CurrentNode.GetT(valueString);
+            LowerValue = CurrentNode.NodeValues[0];
             if (!(CurrentNode.UnderFlow()))
             {
                 for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
@@ -387,9 +402,10 @@ namespace ClassLibrary1
                         }
                     }
                 }
+                CurrentNode.RemoveValue(LowerValue);
                 return LowerValue;
             }
-            return default;
+            return new T();
         }
 
         public void TransferValues(int number)

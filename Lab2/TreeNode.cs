@@ -16,7 +16,7 @@ namespace CustomGenerics
         public int FatherId;
         public List<int> SubTrees;
         public List<T> NodeValues;
-        public int FixedSizeTextLength => 12 + 12 + (12 * Order) + (Order - 1) * (NodeValues[0].FixedSizeTextLength + 1) + 2;
+        public int FixedSizeTextLength => 12 + 12 + (12 * Order) + (Order - 1) * (NodeValues[0].FixedSizeTextLength + 1) + 1;
         #endregion
 
         #region Constructors
@@ -46,10 +46,31 @@ namespace CustomGenerics
             Id = id;
             Order = order;
             NodeValues = new List<T>(Order - 1);
-            SubTrees = new List<int>(Order);
+            FillWithNull();
             NodeValues.Add(value);
         }
         #endregion
+
+        private void FillWithNull()
+        {
+            SubTrees = new List<int>(Order);
+            for (int i = 0; i < Order; i++)
+            {
+                SubTrees.Add(-1);
+            }
+        }
+
+        public bool AllSubtreesNull()
+        {
+            foreach (var item in SubTrees)
+            {
+                if (item != -1)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         public bool NeedsSeparation()
         {
@@ -62,15 +83,17 @@ namespace CustomGenerics
             NodeValues.Sort();
         }
 
-        public void RemoveValue(T value)
+        public bool RemoveValue(T value)
         {
             foreach (var item in NodeValues)
             {
                 if (item.CompareTo(value) == 0)
                 {
                     NodeValues.Remove(item);
+                    return true;
                 }
             }
+            return false;
         }
 
         #region FixedString
@@ -82,33 +105,29 @@ namespace CustomGenerics
         private string GetSubTreesAndNodeValuesFixedString()
         {
             string FixedString = "";
-            int SubtreesLength = Order;
-            for (int i = 0; i < SubTrees.Count; i++)
+            for (int i = 0; i < Order; i++)
             {
-                if (SubTrees[i] != -1)
+                if (i < SubTrees.Count)
                 {
                     if (i + 1 < SubTrees.Count)
                     {
                         FixedString += $"{SubTrees[i]:00000000000;-0000000000},";
-                        SubtreesLength--;
                     }
                     else
                     {
                         FixedString += $"{SubTrees[i]:00000000000;-0000000000}";
-                        SubtreesLength--;
                     }
-                }
-            }
-
-            for (int i = 0; i < SubtreesLength; i++)
-            {
-                if (i + 1 < SubtreesLength)
-                {
-                    FixedString += new string(' ', 11) + ",";
                 }
                 else
                 {
-                    FixedString += new string(' ', 11);
+                    if (i + 1 < SubTrees.Count)
+                    {
+                        FixedString += new string(' ', 11) + ",";
+                    }
+                    else
+                    {
+                        FixedString += new string(' ', 11);
+                    }
                 }
             }
 
@@ -120,14 +139,13 @@ namespace CustomGenerics
                 if (i + 1 < NodeValuesLength)
                 {
                     FixedString += NodeValues[i].ToFixedSize() + "|";
-                    NodeValuesLength--;
                 }
                 else
                 {
                     FixedString += NodeValues[i].ToFixedSize();
-                    NodeValuesLength--;
                 }
             }
+            NodeValuesLength -= NodeValues.Count;
 
             int Tlength = NodeValues[0].FixedSizeTextLength;
             for (int i = 0; i < NodeValuesLength; i++)
@@ -163,6 +181,10 @@ namespace CustomGenerics
                         SubTrees.Add(Index);
                     }
                 }
+                else
+                {
+                    SubTrees.Add(-1);
+                }
                 linea = linea.Remove(0, 12);
             }
             T Value = new T();
@@ -173,8 +195,9 @@ namespace CustomGenerics
                     var stringT = linea.Substring(0, Value.FixedSizeTextLength);
                     Value.GetT(stringT);
                     NodeValues.Add(Value);
-                    linea = linea.Remove(0, Value.FixedSizeTextLength + 1);
+                    Value = new T();
                 }
+                linea = linea.Remove(0, Value.FixedSizeTextLength + 1);
             }
         }
 
@@ -183,13 +206,14 @@ namespace CustomGenerics
             T value = new T();
             if (NodeValues.Count == 0)
             {
-                return 12 + 12 + (12 * Order) + (Order - 1) * (value.FixedSizeTextLength) + 2;
+                return 12 + 12 + (12 * Order) + (Order - 1) * (value.FixedSizeTextLength + 1) + 1;
             }
             else
             {
                 return FixedSizeTextLength;
             }
         }
+
         public bool UnderFlow()
         {
             if (NodeValues.Count - 1 < (Order / 2) - 1)
