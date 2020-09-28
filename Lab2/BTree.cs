@@ -13,10 +13,10 @@ namespace ClassLibrary1
     public class BTree<T> where T : IComparable, IFixedSizeText, new()
     {
         #region TreeVariables
+        public int TreeOrder;
         string FilePath;
         string FileName = "BTree.txt";
         FileStream File;
-        int TreeOrder;
         int RootId;
         int NextNodeId;
         int MetadataLength = 37;//Hacer un método para obtener su valor

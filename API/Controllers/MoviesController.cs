@@ -12,6 +12,9 @@ using Microsoft.AspNetCore.Mvc;
 using ClassLibrary1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Server.HttpSys;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -37,6 +40,13 @@ namespace API.Controllers
             return new List<Movies>();
         }
 
+        enum Pathings
+        {
+            preorden,
+            inorden,
+            postorden
+        }
+
         [HttpGet]
         [Route("{traversal}")]
         public List<Movies> GetMovies(string traversal)
@@ -55,17 +65,20 @@ namespace API.Controllers
 
         // POST api/<MoviesController>
         [HttpPost]
-        public IActionResult PostTreeOrder([FromForm] IFormFile file)
+        public IActionResult PostTreeOrder([FromBody] string order)
         {
-            using var content = new MemoryStream();
             try
             {
-                file.CopyToAsync(content); 
-                var text = Encoding.ASCII.GetString(content.ToArray());
-                var order = JsonSerializer.Deserialize<int>(text);
                 Movies movie = new Movies();
-                Storage.Instance.MoviesTree = new BTree<Movies>(Environment.ContentRootPath , order);
-                return Ok();
+                Storage.Instance.MoviesTree = new BTree<Movies>(Environment.ContentRootPath , Convert.ToInt32(order));
+                if (Storage.Instance.MoviesTree.TreeOrder != Convert.ToInt32(order))
+                {
+                    return StatusCode(500);
+                }
+                else
+                {
+                    return Ok();
+                }
             }
             catch
             {
@@ -75,8 +88,17 @@ namespace API.Controllers
 
         // ELIMINAR ÁRBOL
         [HttpDelete]
-        public void DeleteTree()
+        public IActionResult DeleteTree()
         {
+            if (System.IO.File.Exists($"{Environment.ContentRootPath}/BTree.txt"))
+            {
+                System.IO.File.Delete($"{Environment.ContentRootPath}/BTree.txt");
+                return Ok();
+            }
+            else
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPost]
@@ -91,6 +113,7 @@ namespace API.Controllers
                 var Movies = JsonSerializer.Deserialize<List<Movies>>(text, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
                 foreach (var movie in Movies)
                 {
+                    movie.SetID();
                     Storage.Instance.MoviesTree.AddValue(movie);
                 }
                 return Ok();
@@ -101,10 +124,24 @@ namespace API.Controllers
             }
         }
 
-            // DELETE api/<MoviesController>/5
-            [HttpDelete("{id}")]
-        public void DeleteValue(int id)
+        // DELETE api/<MoviesController>/5
+        [HttpDelete]
+        [Route("{id}")]
+        public IActionResult DeleteValue(string id)
         {
+            //manejar todas las funciones como tipo bool, así podemos diferencias entre cuál debería ser el resultado.
+            try
+            {
+                if (true)//Aquí debemos ejecutar la función del árbol y dependiendo del resultado ya devolver not found u ok;
+                {
+                    return NotFound();
+                }
+                return Ok();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
     }
 }
