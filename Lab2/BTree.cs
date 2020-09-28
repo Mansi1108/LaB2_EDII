@@ -285,24 +285,22 @@ namespace ClassLibrary1
         #endregion
 
         #region Delete
-        public void DeleteValue(T value)
+        public bool DeleteValue(T value)
         {
-            Delete(value, RootId);
+            return Delete(value, RootId);
         }
 
-        private async void Delete(T value, int nodeId)
+        private bool Delete(T value, int nodeId)
         {
-            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
             byte[] buffer = new byte[1024];
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             File.Seek((nodeId - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            File.Close();
             var valueString = ByteGenerator.ConvertToString(buffer);
             CurrentNode.GetT(valueString);
-            if (CurrentNode.SubTrees.Count != 0)
-            {
-                CurrentNode.RemoveValue(value);
-            }
-            else
+            if (!CurrentNode.AllSubtreesNull())
             {
                 for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
                 {
@@ -310,8 +308,7 @@ namespace ClassLibrary1
                     {
                         if (i == 0)
                         {
-                            Delete(value, CurrentNode.SubTrees[i]);
-                            i = CurrentNode.NodeValues.Count;
+                            return Delete(value, CurrentNode.SubTrees[i]);
                         }
                     }
                     else if (value.CompareTo(CurrentNode.NodeValues[i]) == 0)
@@ -319,36 +316,40 @@ namespace ClassLibrary1
                         //Remover el valor y luego manejar la falta o underflow
                         CurrentNode.RemoveValue(value);
                         T Replacement = LeftMajor(CurrentNode.SubTrees[i]);
-                        if (Replacement.CompareTo(default) == 0)
+                        if (Replacement.CompareTo(new T()) == 0)
                         {
                             Replacement = LowerRight(CurrentNode.SubTrees[i + 1]);
 
-                            if (Replacement.CompareTo(default) == 0)
+                            if (Replacement.CompareTo(new T()) == 0)
                             {
                                 TransferValues(CurrentNode.SubTrees[i] + 1);
                                 ReceiveValues(CurrentNode.SubTrees[i]);
                                 CurrentNode.SubTrees[i + 1] = -1;
                             }
                         }
+                        return true;
 
                     }
                     else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)
                     {
                         if (i == CurrentNode.NodeValues.Count - 1)
                         {
-                            Delete(value, CurrentNode.SubTrees[i + 1]);
-                            i = CurrentNode.NodeValues.Count;
+                            return Delete(value, CurrentNode.SubTrees[i + 1]);
                         }
                         else
                         {
                             if (value.CompareTo(CurrentNode.NodeValues[i + 1]) < 0)
                             {
-                                Delete(value, CurrentNode.SubTrees[i + 1]);
-                                i = CurrentNode.NodeValues.Count;
+                                return Delete(value, CurrentNode.SubTrees[i + 1]);
                             }
                         }
                     }
                 }
+                return false;
+            }
+            else
+            {
+                return CurrentNode.RemoveValue(value);
             }
         }
         #endregion
@@ -356,13 +357,14 @@ namespace ClassLibrary1
         #region NodeMoves
         public T LeftMajor(int number)
         {
-            T MajorValue = default;
-            TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
+            T MajorValue = new T();
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
             byte[] buffer = new byte[1024];
             File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
             var valueString = ByteGenerator.ConvertToString(buffer);
             CurrentNode.GetT(valueString);
+            MajorValue = CurrentNode.NodeValues[0];
             if (!(CurrentNode.UnderFlow()))
             {
                 for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
@@ -372,20 +374,22 @@ namespace ClassLibrary1
                         MajorValue = CurrentNode.NodeValues[i];
                     }
                 }
+                CurrentNode.RemoveValue(MajorValue);
                 return MajorValue;
             }
-            return default;
+            return new T();
         }
 
         public T LowerRight(int number)
         {
-            T LowerValue = default;
+            T LowerValue = new T();
             TreeNode<T> CurrentNode = new TreeNode<T>(default, TreeOrder);
             byte[] buffer = new byte[1024];
             File.Seek((number - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             File.Read(buffer, 0, CurrentNode.GetNodeSize());
             var valueString = ByteGenerator.ConvertToString(buffer);
             CurrentNode.GetT(valueString);
+            LowerValue = CurrentNode.NodeValues[0];
             if (!(CurrentNode.UnderFlow()))
             {
                 for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
@@ -398,9 +402,10 @@ namespace ClassLibrary1
                         }
                     }
                 }
+                CurrentNode.RemoveValue(LowerValue);
                 return LowerValue;
             }
-            return default;
+            return new T();
         }
 
         public void TransferValues(int number)

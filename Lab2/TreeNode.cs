@@ -83,15 +83,17 @@ namespace CustomGenerics
             NodeValues.Sort();
         }
 
-        public void RemoveValue(T value)
+        public bool RemoveValue(T value)
         {
             foreach (var item in NodeValues)
             {
                 if (item.CompareTo(value) == 0)
                 {
                     NodeValues.Remove(item);
+                    return true;
                 }
             }
+            return false;
         }
 
         #region FixedString
