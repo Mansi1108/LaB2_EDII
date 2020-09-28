@@ -510,5 +510,119 @@ namespace ClassLibrary1
             ST.Clear();
         }
         #endregion
+
+        #region Pathings
+        public List<T> Pathing(string pathingType)
+        {
+            switch (pathingType)
+            {
+                case "preorden":
+                    return PreOrder(RootId);
+                case "inorden":
+                    return InOrder(RootId);
+                case "postorden":
+                    return PostOrder(RootId);
+            }
+            return null;
+        }
+
+        private List<T> PreOrder(int id) 
+        {
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+            byte[] buffer = new byte[1024];
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+            File.Seek((id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            File.Close();
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+            List<T> returnList = new List<T>();
+            List<T> subtreeList = new List<T>();
+            foreach (var value in CurrentNode.NodeValues)
+            {
+                returnList.Add(value);
+            }
+            if (!CurrentNode.AllSubtreesNull())
+            {
+                foreach (var subtree in CurrentNode.SubTrees)
+                {
+                    if (subtree != -1)
+                    {
+                        subtreeList = PreOrder(subtree);
+                        foreach (var value in subtreeList)
+                        {
+                            returnList.Add(value);
+                        }
+                    }
+                }
+            }
+            return returnList;
+        }
+        
+        private List<T> InOrder(int id) 
+        {
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+            byte[] buffer = new byte[1024];
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+            File.Seek((id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            File.Close();
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+            List<T> returnList = new List<T>();
+            List<T> subtreeList = new List<T>();
+            for (int i = 0; i < CurrentNode.NodeValues.Count; i++)
+            {
+                if (CurrentNode.SubTrees[i] != -1)
+                {
+                    subtreeList = InOrder(CurrentNode.SubTrees[i]);
+                    foreach (var value in subtreeList)
+                    {
+                        returnList.Add(value);
+                    }
+                }
+                returnList.Add(CurrentNode.NodeValues[i]);
+            }
+            if (CurrentNode.SubTrees[CurrentNode.SubTrees.Count-1] != -1)
+            {
+                subtreeList = InOrder(CurrentNode.SubTrees[CurrentNode.SubTrees.Count - 1]);
+                foreach (var value in subtreeList)
+                {
+                    returnList.Add(value);
+                }
+            }
+            return returnList;
+        }
+
+        private List<T> PostOrder(int id) 
+        {
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+            byte[] buffer = new byte[1024];
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+            File.Seek((id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            File.Close();
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+            List<T> returnList = new List<T>();
+            List<T> subtreeList = new List<T>();
+            foreach (var subtree in CurrentNode.SubTrees)
+            {
+                if (subtree != -1)
+                {
+                    subtreeList = PostOrder(subtree);
+                    foreach (var value in subtreeList)
+                    {
+                        returnList.Add(value);
+                    }
+                }
+            }
+            foreach (var value in CurrentNode.NodeValues)
+            {
+                returnList.Add(value);
+            }
+            return returnList;
+        }
+        #endregion
     }
 }
