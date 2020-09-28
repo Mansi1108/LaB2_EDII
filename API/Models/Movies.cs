@@ -32,15 +32,15 @@ namespace API.Models
         public void GetT(string linea)
         {
             Title = linea.Substring(0, 100).Trim();
-            linea.Remove(0, 101);
+            linea = linea.Remove(0, 101);
             ReleaseDate = linea.Substring(0, 20).Trim();
-            linea.Remove(0, 21);
+            linea = linea.Remove(0, 21);
             Director = linea.Substring(0, 50).Trim();
-            linea.Remove(0, 51);
+            linea = linea.Remove(0, 51);
             Genre = linea.Substring(0, 20).Trim();
-            linea.Remove(0, 21);
+            linea = linea.Remove(0, 21);
             ImdbRating = double.Parse(linea.Substring(0, 6));
-            linea.Remove(0, 7);
+            linea = linea.Remove(0, 7);
             RottenTomatoesRating = int.Parse(linea.Trim());
             SetID();
         }

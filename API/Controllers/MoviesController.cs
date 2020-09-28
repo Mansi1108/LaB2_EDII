@@ -51,15 +51,15 @@ namespace API.Controllers
         [Route("{traversal}")]
         public List<Movies> GetMovies(string traversal)
         {
-            //switch (traversal)
-            //{
-            //    case "preorden":
-            //        return Storage.Instance.MoviesTree.GetPathing(0);
-            //    case "inorden":
-            //        return Storage.Instance.MoviesTree.GetPathing(1);
-            //    case "postorden":
-            //        return Storage.Instance.MoviesTree.GetPathing(2);
-            //}
+            switch (traversal)
+            {
+                case "preorden":
+                    return Storage.Instance.MoviesTree.Pathing(1);
+                case "inorden":
+                    return Storage.Instance.MoviesTree.Pathing(2);
+                case "postorden":
+                    return Storage.Instance.MoviesTree.Pathing(3);
+            }
             return new List<Movies>();
         }
 

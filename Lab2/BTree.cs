@@ -198,6 +198,7 @@ namespace ClassLibrary1
                 LastnodeId = CurrentNode.Id;
             }
             // Sobreescribir el nodo actual
+            File.Close();
             File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
             File.Seek((CurrentNode.Id - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin); //Hay que revisar si hay que hacer este segundo seek.
             using var writer = new StreamWriter(File, Encoding.ASCII);
