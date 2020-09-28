@@ -99,26 +99,35 @@ namespace ClassLibrary1
                     {
                         if (value.CompareTo(CurrentNode.NodeValues[i]) < 0)
                         {
-                            //Insertar en el árbol de hasta la izquierda
-                            Insert(value, CurrentNode.SubTrees[i]);
-                            i = CurrentNode.NodeValues.Count;
-
+                            if (CurrentNode.SubTrees[i + 1] != -1)
+                            {
+                                //Insertar en el árbol de hasta la izquierda
+                                Insert(value, CurrentNode.SubTrees[i]);
+                                i = CurrentNode.NodeValues.Count;
+                            }     
                         }
                         else if (value.CompareTo(CurrentNode.NodeValues[i]) > 0)
                         {
                             if (i == CurrentNode.NodeValues.Count - 1)
                             {
-                                //Insertar en el árbol de hasta la derecha
-                                Insert(value, CurrentNode.SubTrees[i + 1]);
-                                i = CurrentNode.NodeValues.Count;
+                                if(CurrentNode.SubTrees[i + 1] != -1)
+                                {
+                                    //Insertar en el árbol de hasta la derecha
+                                    Insert(value, CurrentNode.SubTrees[i + 1]);
+                                    i = CurrentNode.NodeValues.Count;
+                                }
+
                             }
                             else
                             {
                                 if (value.CompareTo(CurrentNode.NodeValues[i + 1]) < 0)
                                 {
-                                    //Insertar en el i+1
-                                    Insert(value, CurrentNode.SubTrees[i + 1]);
-                                    i = CurrentNode.NodeValues.Count;
+                                    if (CurrentNode.SubTrees[i + 1] != -1)
+                                    {
+                                        //Insertar en el árbol de hasta la derecha
+                                        Insert(value, CurrentNode.SubTrees[i + 1]);
+                                        i = CurrentNode.NodeValues.Count;
+                                    }
                                 }
                             }
                         }
@@ -176,7 +185,10 @@ namespace ClassLibrary1
             FatherId = CurrentNode.FatherId;
             if (FatherId == -1)
             {
-                FatherSubtrees.Add(CurrentNode.Id);
+                if (!FatherSubtrees.Contains(CurrentNode.Id))
+                {
+                    FatherSubtrees.Add(CurrentNode.Id);
+                }
                 FatherSubtrees.Add(NextNodeId);
             }
             else
@@ -214,6 +226,7 @@ namespace ClassLibrary1
             File.Seek((NewNode.Id - 1) * NewNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
             using var writer = new StreamWriter(File, Encoding.ASCII);
             await writer.WriteAsync(NewNode.ToFixedSize());
+            RightValues.Clear();
             writer.Close();
         }
 
@@ -243,9 +256,43 @@ namespace ClassLibrary1
                 using var writer2 = new StreamWriter(File, Encoding.ASCII);
                 writer2.Write(NewRoot.ToFixedSize());
                 writer2.Close();
+                FatherSubtrees.Clear();
+                UpdateTree(NewRoot.Id);
             }
+            RightSubtreesValues.Clear();
         }
 
+        private async void UpdateTree(int Fid)
+        {
+            int bufferLength = 1024;
+            byte[] buffer;
+            TreeNode<T> CurrentNode = new TreeNode<T>(TreeOrder);
+            buffer = new byte[bufferLength];
+            File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+            File.Seek((Fid - 1) * CurrentNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+            File.Read(buffer, 0, CurrentNode.GetNodeSize());
+            File.Close();
+            var valueString = ByteGenerator.ConvertToString(buffer);
+            CurrentNode.GetT(valueString);
+            foreach (var item in CurrentNode.SubTrees)
+            {
+                if (item != -1)
+                {
+                    TreeNode<T> SubtreeNode = new TreeNode<T>(TreeOrder);
+                    buffer = new byte[bufferLength];
+                    File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+                    File.Seek((item - 1) * SubtreeNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+                    File.Read(buffer, 0, SubtreeNode.GetNodeSize());
+                    var valueStringS = ByteGenerator.ConvertToString(buffer);
+                    SubtreeNode.GetT(valueStringS);
+                    SubtreeNode.FatherId = Fid;
+                    File.Seek((item - 1) * SubtreeNode.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+                    using var writer = new StreamWriter(File, Encoding.ASCII);
+                    await writer.WriteAsync(SubtreeNode.ToFixedSize());
+                    writer.Close();
+                }
+            }
+        }
         private async void InsertInFather(T value, int fatherId)
         {
             File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
@@ -262,7 +309,15 @@ namespace ClassLibrary1
                 {
                     if (i + 1 != CurrentNode.SubTrees.Count)
                     {
+                        if(FatherSubtrees.Count != 0)
+                        {
+                            CurrentNode.SubTrees.Insert(i + 1, FatherSubtrees[0]);
+                            FatherSubtrees.RemoveAt(0); 
+                        }
+                        else 
+                        {
                         CurrentNode.SubTrees.Insert(i + 1, RightSubtreesValues[0]);
+                        }
                     }
                     else
                     {
@@ -281,6 +336,7 @@ namespace ClassLibrary1
                 await writer.WriteAsync(CurrentNode.ToFixedSize());
             }
             File.Close();
+            UpdateTree(CurrentNode.Id);
         }
         #endregion
 

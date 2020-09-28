@@ -5,6 +5,7 @@ using System.Data;
 using System.Text;
 using System.IO;
 using CustomGenerics.Utilies;
+using System.Runtime.InteropServices;
 
 namespace CustomGenerics
 {
@@ -179,7 +180,7 @@ namespace CustomGenerics
                     FixedString += new string(' ', Tlength);
                 }
             }
-
+            
             return FixedString;
         }
         #endregion
