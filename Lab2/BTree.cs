@@ -217,7 +217,7 @@ namespace ClassLibrary1
             writer.Close();
         }
 
-        private async void ChangeFather()
+        private void ChangeFather()
         {
             if (FatherId != -1)
             {
@@ -236,10 +236,13 @@ namespace ClassLibrary1
                 File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
                 File.Seek(0, SeekOrigin.Begin);
                 using var writer = new StreamWriter(File, Encoding.ASCII);
-                await writer.WriteAsync(GetMetadata());
-                File.Seek((NewRoot.Id - 1) * NewRoot.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
-                await writer.WriteAsync(NewRoot.ToFixedSize());
+                writer.Write(GetMetadata());
                 writer.Close();
+                File = new FileStream($"{FilePath}/{FileName}", FileMode.OpenOrCreate);
+                File.Seek((NewRoot.Id - 1) * NewRoot.GetNodeSize() + MetadataLength, SeekOrigin.Begin);
+                using var writer2 = new StreamWriter(File, Encoding.ASCII);
+                writer2.Write(NewRoot.ToFixedSize());
+                writer2.Close();
             }
         }
 
