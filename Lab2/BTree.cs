@@ -512,15 +512,15 @@ namespace ClassLibrary1
         #endregion
 
         #region Pathings
-        public List<T> Pathing(string pathingType)
+        public List<T> Pathing(int pathingType)
         {
             switch (pathingType)
             {
-                case "preorden":
+                case 1:
                     return PreOrder(RootId);
-                case "inorden":
+                case 2:
                     return InOrder(RootId);
-                case "postorden":
+                case 3:
                     return PostOrder(RootId);
             }
             return null;
@@ -583,9 +583,9 @@ namespace ClassLibrary1
                 }
                 returnList.Add(CurrentNode.NodeValues[i]);
             }
-            if (CurrentNode.SubTrees[CurrentNode.SubTrees.Count-1] != -1)
+            if (CurrentNode.SubTrees[CurrentNode.NodeValues.Count] != -1)
             {
-                subtreeList = InOrder(CurrentNode.SubTrees[CurrentNode.SubTrees.Count - 1]);
+                subtreeList = InOrder(CurrentNode.SubTrees[CurrentNode.NodeValues.Count]);
                 foreach (var value in subtreeList)
                 {
                     returnList.Add(value);
