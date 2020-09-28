@@ -132,11 +132,11 @@ namespace API.Controllers
             //manejar todas las funciones como tipo bool, así podemos diferencias entre cuál debería ser el resultado.
             try
             {
-                if (true)//Aquí debemos ejecutar la función del árbol y dependiendo del resultado ya devolver not found u ok;
+                if (Storage.Instance.MoviesTree.DeleteValue(new Movies() { ID = id }))//Aquí debemos ejecutar la función del árbol y dependiendo del resultado ya devolver not found u ok;
                 {
-                    return NotFound();
+                    return Ok();
                 }
-                return Ok();
+                return NotFound();
             }
             catch
             {
